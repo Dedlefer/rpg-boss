@@ -1,167 +1,246 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPG-Босс</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RPG-Босс</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- ================= ГЛАВНЫЙ ЭКРАН ================= -->
-    <div id="main-screen" class="screen active">
-        <div id="top-bar">
-            <div>
-                <span>УРОВЕНЬ: <span id="hero-level">1</span></span>
-            </div>
-            <div class="xp-block">
-                <span>Опыт: <span id="hero-xp">0</span> / <span id="hero-xp-to-next">5000</span></span>
-                <div class="hp-bar">
-                    <div id="hero-xp-bar" class="hp-bar-fill xp-fill"></div>
-                </div>
-            </div>
-            <div class="currency-block">
-                <img src="images/coin_silver.png" class="currency-icon" onerror="this.style.display='none'"> <span id="hero-silver">0</span>
-                <img src="images/coin_gold.png" class="currency-icon" onerror="this.style.display='none'"> <span id="hero-gold">0</span>
-                <img src="images/gem_diamond.png" class="currency-icon" onerror="this.style.display='none'"> <span id="hero-diamonds">0</span>
-            </div>
+
+<!-- ============ ГЛАВНЫЙ ЭКРАН ============ -->
+<div id="main-screen" class="screen active">
+    <div id="top-bar">
+        <div class="top-item">УР. <b id="hero-level">1</b></div>
+        <div class="top-item xp-block">
+            <div>Опыт: <span id="hero-xp">0</span> / <span id="hero-xp-to-next">5000</span></div>
+            <div class="hp-bar"><div id="hero-xp-bar" class="hp-bar-fill xp-fill"></div></div>
         </div>
-
-        <div id="main-body">
-            <div class="panel hero-panel">
-                <img src="images/hero.jpg" alt="Герой" class="hero-avatar" onerror="this.style.display='none'">
-                <h2>БОЕВЫЕ СТАТЫ</h2>
-                <div class="stat-line"><span>HP:</span> <span id="hero-hp">200</span></div>
-                <div class="stat-line"><span>Урон:</span> <span id="hero-damage">100</span></div>
-                <div class="stat-line"><span>Шанс крита:</span> <span id="hero-crit-chance">0.0%</span></div>
-                <div class="stat-line"><span>Крит урон:</span> <span id="hero-crit-damage">100.0%</span></div>
-                <div class="stat-line"><span>Уклонение:</span> <span id="hero-evade">0.0%</span></div>
-            </div>
-
-            <div class="panel equip-panel">
-                <h2>ЭКИПИРОВКА</h2>
-                <div id="equip-grid">
-                    <div class="equip-slot" data-slot="weapon">ОРУЖИЕ</div>
-                    <div class="equip-slot" data-slot="helmet">ШЛЕМ</div>
-                    <div class="equip-slot" data-slot="chest">НАГРУДНИК</div>
-                    <div class="equip-slot" data-slot="legs">ПОНОЖИ</div>
-                    <div class="equip-slot" data-slot="boots">БОТИНКИ</div>
-                    <div class="equip-slot" data-slot="shield">ЩИТ</div>
-                </div>
-            </div>
-
-            <div class="panel stats-panel">
-                <h2>ХАРАКТЕРИСТИКИ</h2>
-                <div class="stat-row">
-                    <img src="images/icon_str.png" class="stat-icon" onerror="this.style.display='none'">
-                    <span>СИЛА</span>
-                    <span id="str">0</span>
-                    <button onclick="addStat('str')" class="stat-plus">+</button>
-                </div>
-                <div class="stat-row">
-                    <img src="images/icon_agi.png" class="stat-icon" onerror="this.style.display='none'">
-                    <span>ЛОВКОСТЬ</span>
-                    <span id="agi">0</span>
-                    <button onclick="addStat('agi')" class="stat-plus">+</button>
-                </div>
-                <div class="stat-row">
-                    <img src="images/icon_sta.png" class="stat-icon" onerror="this.style.display='none'">
-                    <span>СТОЙКОСТЬ</span>
-                    <span id="sta">0</span>
-                    <button onclick="addStat('sta')" class="stat-plus">+</button>
-                </div>
-                <div class="unspent">Свободных очков: <span id="hero-unspent-points">0</span></div>
-            </div>
-        </div>
-
-        <div id="bottom-nav">
-            <button onclick="goToScreen('map-screen')" class="nav-btn">
-                <img src="images/button_map.png" class="btn-icon" onerror="this.style.display='none'"> КАРТА
-            </button>
-            <button onclick="goToScreen('shop-screen')" class="nav-btn">
-                <img src="images/button_shop.png" class="btn-icon" onerror="this.style.display='none'"> МАГАЗИН
-            </button>
-            <button onclick="goToScreen('inventory-screen')" class="nav-btn">
-                <img src="images/button_bag.png" class="btn-icon" onerror="this.style.display='none'"> ИНВЕНТАРЬ
-            </button>
+        <div class="top-item currency-block">
+            <img src="images/coin_silver.png" class="currency-icon" onerror="this.style.display='none'"><span id="hero-silver">0</span>
+            <img src="images/coin_gold.png" class="currency-icon" onerror="this.style.display='none'"><span id="hero-gold">0</span>
+            <img src="images/gem_diamond.png" class="currency-icon" onerror="this.style.display='none'"><span id="hero-diamonds">0</span>
+            <img src="images/key.png" class="currency-icon" onerror="this.style.display='none'"><span id="hero-keys">0</span>
         </div>
     </div>
 
-    <!-- ================= КАРТА / СПИСОК БОССОВ ================= -->
-    <div id="map-screen" class="screen">
-        <div class="screen-header">
-            <h1>ВЫБОР БОССА</h1>
+    <div id="main-body">
+        <div class="panel hero-panel">
+            <img src="images/hero.jpg" alt="Герой" class="hero-avatar" onerror="this.style.display='none'">
+            <h2>БОЕВЫЕ СТАТЫ</h2>
+            <div class="stat-line"><span>HP</span><b id="hero-hp">200</b></div>
+            <div class="stat-line"><span>Урон</span><b id="hero-damage">100</b></div>
+            <div class="stat-line"><span>Шанс крита</span><b id="hero-crit-chance">0.0%</b></div>
+            <div class="stat-line"><span>Крит урон</span><b id="hero-crit-damage">100.0%</b></div>
+            <div class="stat-line"><span>Уклонение</span><b id="hero-evade">0.0%</b></div>
+            <div class="stat-line pet-line"><span>Питомец</span><b id="hero-pet">Нет</b></div>
+        </div>
+
+        <div class="panel equip-panel">
+            <h2>ЭКИПИРОВКА</h2>
+            <div id="equip-grid">
+                <div class="equip-slot empty" data-slot="weapon">ОРУЖИЕ</div>
+                <div class="equip-slot empty" data-slot="helmet">ШЛЕМ</div>
+                <div class="equip-slot empty" data-slot="chest">НАГРУДНИК</div>
+                <div class="equip-slot empty" data-slot="legs">ПОНОЖИ</div>
+                <div class="equip-slot empty" data-slot="boots">БОТИНКИ</div>
+                <div class="equip-slot empty" data-slot="shield">ЩИТ</div>
+            </div>
+        </div>
+
+        <div class="panel stats-panel">
+            <h2>ХАРАКТЕРИСТИКИ</h2>
+            <div class="stat-row">
+                <img src="images/icon_str.png" class="stat-icon" onerror="this.style.display='none'">
+                <span>СИЛА</span><span id="str">0</span>
+                <button onclick="addStat('str')" class="stat-plus">+</button>
+            </div>
+            <div class="stat-row">
+                <img src="images/icon_agi.png" class="stat-icon" onerror="this.style.display='none'">
+                <span>ЛОВКОСТЬ</span><span id="agi">0</span>
+                <button onclick="addStat('agi')" class="stat-plus">+</button>
+            </div>
+            <div class="stat-row">
+                <img src="images/icon_sta.png" class="stat-icon" onerror="this.style.display='none'">
+                <span>СТОЙКОСТЬ</span><span id="sta">0</span>
+                <button onclick="addStat('sta')" class="stat-plus">+</button>
+            </div>
+            <div class="unspent">Свободных очков: <b id="hero-unspent-points">0</b></div>
+
+            <h2 style="margin-top:16px">НАВЫКИ</h2>
+            <div id="skill-list"></div>
+            <button class="mini-btn" onclick="rerollStats()" title="Сбросить все очки характеристик">СБРОС ОЧКОВ (3 алмаза)</button>
+        </div>
+    </div>
+
+    <div id="bottom-nav">
+        <button onclick="goToScreen('map-screen')" class="nav-btn">КАРТА</button>
+        <button onclick="goToScreen('shop-screen')" class="nav-btn">МАГАЗИН</button>
+        <button onclick="goToScreen('inventory-screen')" class="nav-btn">ИНВЕНТАРЬ</button>
+        <button onclick="goToScreen('skills-screen')" class="nav-btn">НАВЫКИ</button>
+        <button onclick="goToScreen('achievements-screen')" class="nav-btn">ДОСТИЖЕНИЯ</button>
+    </div>
+</div>
+
+<!-- ============ КАРТА ============ -->
+<div id="map-screen" class="screen">
+    <div class="screen-header">
+        <h1>ВЫБОР БОССА</h1>
+        <div class="header-btns">
+            <button class="back-btn" onclick="goToScreen('tower-screen')">БАШНЯ</button>
             <button class="back-btn" onclick="goToScreen('main-screen')">НАЗАД</button>
         </div>
-        <div id="boss-list" class="boss-list"></div>
     </div>
+    <div id="daily-boss-banner"></div>
+    <div id="boss-list" class="boss-list"></div>
+</div>
 
-    <!-- ================= БОЙ ================= -->
-    <div id="battle-screen" class="screen">
-        <div class="screen-header">
-            <h1>БОЙ</h1>
-            <button class="back-btn" onclick="goToScreen('map-screen')">СБЕЖАТЬ</button>
+<!-- ============ БАШНЯ ============ -->
+<div id="tower-screen" class="screen">
+    <div class="screen-header">
+        <h1>БАШНЯ</h1>
+        <button class="back-btn" onclick="goToScreen('map-screen')">НАЗАД</button>
+    </div>
+    <p class="hint">Бесконечные этажи с растущей сложностью. Рекорд: <b id="tower-record">0</b></p>
+    <div class="tower-info">
+        <div>Текущий этаж: <b id="tower-floor">1</b></div>
+        <div>Босс: <b id="tower-boss-name">—</b></div>
+    </div>
+    <div class="buttons"><button onclick="startTowerBattle()">СРАЗИТЬСЯ</button></div>
+</div>
+
+<!-- ============ БОЙ ============ -->
+<div id="battle-screen" class="screen">
+    <div class="screen-header">
+        <h1>БОЙ</h1>
+        <button class="back-btn" onclick="fleeBattle()">СБЕЖАТЬ</button>
+    </div>
+    <div class="battle-arena">
+        <div class="fighter">
+            <img src="images/hero.jpg" alt="Герой" class="hero-img-battle" onerror="this.style.display='none'">
+            <div class="fighter-name">Герой</div>
+            <div class="hp-bar"><div id="hero-hp-bar" class="hp-bar-fill hero-hp-fill"></div></div>
+            <div class="hp-text">HP: <span id="hero-battle-hp">200</span> / <span id="hero-battle-max-hp">200</span></div>
         </div>
-        <div class="battle-arena">
-            <div class="fighter hero-fighter">
-                <img src="images/hero.jpg" alt="Герой" class="hero-img-battle" onerror="this.style.display='none'">
-                <div class="fighter-name">Герой</div>
-                <div class="hp-bar">
-                    <div id="hero-hp-bar" class="hp-bar-fill hero-hp-fill"></div>
-                </div>
-                <div class="hp-text">HP: <span id="hero-battle-hp">200</span> / <span id="hero-battle-max-hp">200</span></div>
-            </div>
-            <div class="vs">VS</div>
-            <div class="fighter boss-fighter">
+        <div class="vs">VS</div>
+        <div class="fighter">
+            <div class="img-wrap">
                 <img id="boss-img-battle" src="images/boss.jpg" alt="Босс" class="boss-img-battle" onerror="this.style.display='none'">
-                <div class="fighter-name" id="boss-name-battle">Босс</div>
-                <div class="hp-bar">
-                    <div id="boss-hp-bar" class="hp-bar-fill boss-hp-fill"></div>
-                </div>
-                <div class="hp-text">HP: <span id="boss-battle-hp">2000</span> / <span id="boss-battle-max-hp">2000</span></div>
+                <div id="damage-popups"></div>
             </div>
+            <div class="fighter-name" id="boss-name-battle">Босс</div>
+            <div class="hp-bar"><div id="boss-hp-bar" class="hp-bar-fill boss-hp-fill"></div></div>
+            <div class="hp-text">HP: <span id="boss-battle-hp">0</span> / <span id="boss-battle-max-hp">0</span></div>
         </div>
-        <div class="log" id="battle-log"></div>
+    </div>
+    <div class="battle-controls">
+        <button class="action-btn" onclick="playerAction('attack')">АТАКА</button>
+        <button class="action-btn" onclick="playerAction('heavy')">ТЯЖЁЛЫЙ</button>
+        <button class="action-btn" onclick="playerAction('defend')">ЗАЩИТА</button>
+        <button class="action-btn" onclick="playerAction('potion')">ЗЕЛЬЕ (<span id="potion-count">3</span>)</button>
+        <button class="action-btn auto" onclick="toggleAuto()" id="auto-btn">АВТО: ВЫКЛ</button>
+        <button class="action-btn speed" onclick="cycleSpeed()" id="speed-btn">×1</button>
+    </div>
+    <div class="log" id="battle-log"></div>
+</div>
+
+<!-- ============ ЭКРАН РЕЗУЛЬТАТА ============ -->
+<div id="result-modal" class="modal hidden">
+    <div class="modal-content result-content">
+        <h1 id="result-title">ПОБЕДА!</h1>
+        <div id="result-body"></div>
         <div class="buttons">
-            <button id="attack-button" onclick="attack()">АТАКА</button>
+            <button id="result-again">ЕЩЁ РАЗ</button>
+            <button id="result-map">НА КАРТУ</button>
+            <button id="result-menu">В МЕНЮ</button>
         </div>
     </div>
+</div>
 
-    <!-- ================= МАГАЗИН ================= -->
-    <div id="shop-screen" class="screen">
-        <div class="screen-header">
-            <h1>МАГАЗИН</h1>
-            <button class="back-btn" onclick="goToScreen('main-screen')">НАЗАД</button>
-        </div>
-        <div id="shop-tabs">
-            <button class="shop-tab active" data-type="weapon">ОРУЖИЕ</button>
-            <button class="shop-tab" data-type="helmet">ШЛЕМЫ</button>
-            <button class="shop-tab" data-type="chest">НАГРУДНИКИ</button>
-            <button class="shop-tab" data-type="legs">ПОНОЖИ</button>
-            <button class="shop-tab" data-type="boots">БОТИНКИ</button>
-            <button class="shop-tab" data-type="shield">ЩИТЫ</button>
-        </div>
-        <div id="shop-grid" class="shop-grid"></div>
+<!-- ============ МАГАЗИН ============ -->
+<div id="shop-screen" class="screen">
+    <div class="screen-header">
+        <h1>МАГАЗИН</h1>
+        <button class="back-btn" onclick="goToScreen('main-screen')">НАЗАД</button>
     </div>
-
-    <!-- ================= ИНВЕНТАРЬ ================= -->
-    <div id="inventory-screen" class="screen">
-        <div class="screen-header">
-            <h1>ИНВЕНТАРЬ</h1>
-            <button class="back-btn" onclick="goToScreen('main-screen')">НАЗАД</button>
-        </div>
-        <div id="inventory-grid" class="inventory-grid"></div>
-        <div id="inventory-empty" class="empty-note hidden">Инвентарь пуст. Загляните в магазин!</div>
+    <div id="daily-deal"></div>
+    <div id="shop-tabs">
+        <button class="shop-tab active" data-type="weapon">ОРУЖИЕ</button>
+        <button class="shop-tab" data-type="helmet">ШЛЕМЫ</button>
+        <button class="shop-tab" data-type="chest">НАГРУДНИКИ</button>
+        <button class="shop-tab" data-type="legs">ПОНОЖИ</button>
+        <button class="shop-tab" data-type="boots">БОТИНКИ</button>
+        <button class="shop-tab" data-type="shield">ЩИТЫ</button>
+        <button class="shop-tab" data-type="potion">РАСХОДНИКИ</button>
     </div>
+    <div id="shop-grid" class="shop-grid"></div>
+</div>
 
-    <!-- ================= МОДАЛКА ВЫБОРА ПРЕДМЕТА ================= -->
-    <div id="equip-modal" class="modal hidden">
-        <div class="modal-content">
-            <h2>ВЫБЕРИ <span id="modal-slot-name"></span></h2>
-            <div id="modal-items" class="modal-items-grid"></div>
-            <button class="modal-close" onclick="closeEquipModal()">ЗАКРЫТЬ</button>
+<!-- ============ ИНВЕНТАРЬ ============ -->
+<div id="inventory-screen" class="screen">
+    <div class="screen-header">
+        <h1>ИНВЕНТАРЬ</h1>
+        <button class="back-btn" onclick="goToScreen('main-screen')">НАЗАД</button>
+    </div>
+    <div class="inv-tabs">
+        <button class="inv-tab active" data-tab="equipment">СНАРЯЖЕНИЕ</button>
+        <button class="inv-tab" data-tab="consumable">РАСХОДНИКИ</button>
+        <button class="inv-tab" data-tab="keys">КЛЮЧИ/СУНДУКИ</button>
+    </div>
+    <div id="inventory-grid" class="inventory-grid"></div>
+    <div id="inventory-empty" class="empty-note hidden">Инвентарь пуст. Загляни в магазин!</div>
+</div>
+
+<!-- ============ НАВЫКИ ============ -->
+<div id="skills-screen" class="screen">
+    <div class="screen-header">
+        <h1>ДРЕВО НАВЫКОВ</h1>
+        <button class="back-btn" onclick="goToScreen('main-screen')">НАЗАД</button>
+    </div>
+    <p class="hint">Очки навыков: <b id="skill-points">0</b>. Открывай пассивки за очки характеристик и уровни.</p>
+    <div id="skills-grid" class="skills-grid"></div>
+</div>
+
+<!-- ============ ДОСТИЖЕНИЯ ============ -->
+<div id="achievements-screen" class="screen">
+    <div class="screen-header">
+        <h1>ДОСТИЖЕНИЯ</h1>
+        <button class="back-btn" onclick="goToScreen('main-screen')">НАЗАД</button>
+    </div>
+    <div id="ach-grid" class="ach-grid"></div>
+</div>
+
+<!-- ============ МОДАЛКА СЛОТА ============ -->
+<div id="equip-modal" class="modal hidden">
+    <div class="modal-content">
+        <h2>ВЫБЕРИ <span id="modal-slot-name"></span></h2>
+        <div id="modal-items" class="modal-items-grid"></div>
+        <button class="modal-close" onclick="closeEquipModal()">ЗАКРЫТЬ</button>
+    </div>
+</div>
+
+<!-- ============ МОДАЛКА СОХРАНЕНИЙ ============ -->
+<div id="save-modal" class="modal hidden">
+    <div class="modal-content">
+        <h2>СОХРАНЕНИЕ</h2>
+        <textarea id="save-text" rows="8" style="width:100%"></textarea>
+        <div class="buttons">
+            <button onclick="exportSave()">ЭКСПОРТ (в поле)</button>
+            <button onclick="importSave()">ИМПОРТ (из поля)</button>
+            <button onclick="closeModal('save-modal')">ЗАКРЫТЬ</button>
         </div>
     </div>
+</div>
 
-    <script src="script.js" defer></script>
+<!-- ============ DEBUG ============ -->
+<div id="debug-panel" class="hidden">
+    <button onclick="dbgAddMoney()">+10000 серебра</button>
+    <button onclick="dbgAddLevels()">+5 уровней</button>
+    <button onclick="dbgWinBoss()">Убить текущего босса</button>
+    <button onclick="dbgReset()">Сброс</button>
+    <button onclick="openModal('save-modal')">Сохранить/Загрузить</button>
+</div>
+
+<script src="script.js" defer></script>
 </body>
 </html>
