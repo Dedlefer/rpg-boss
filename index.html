@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="ru">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,160 +7,158 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="top-bar">
-        <div>
-            <span>УРОВЕНЬ: <span id="hero-level">1</span></span>
-        </div>
-        <div>
-            <span>Опыт: <span id="hero-xp">0</span> / <span id="hero-xp-to-next">5000</span></span>
-            <div class="hp-bar">
-                <div id="hero-xp-bar" class="hp-bar-fill"></div>
+    <!-- ================= ГЛАВНЫЙ ЭКРАН ================= -->
+    <div id="main-screen" class="screen active">
+        <div id="top-bar">
+            <div>
+                <span>УРОВЕНЬ: <span id="hero-level">1</span></span>
+            </div>
+            <div class="xp-block">
+                <span>Опыт: <span id="hero-xp">0</span> / <span id="hero-xp-to-next">5000</span></span>
+                <div class="hp-bar">
+                    <div id="hero-xp-bar" class="hp-bar-fill xp-fill"></div>
+                </div>
+            </div>
+            <div class="currency-block">
+                <img src="images/coin_silver.png" class="currency-icon" onerror="this.style.display='none'"> <span id="hero-silver">0</span>
+                <img src="images/coin_gold.png" class="currency-icon" onerror="this.style.display='none'"> <span id="hero-gold">0</span>
+                <img src="images/gem_diamond.png" class="currency-icon" onerror="this.style.display='none'"> <span id="hero-diamonds">0</span>
             </div>
         </div>
-        <div>
-            <img src="images/coin_silver.png" class="currency-icon" onerror="this.style.display='none'"> <span id="hero-silver">0</span>
-            <img src="images/coin_gold.png" class="currency-icon" onerror="this.style.display='none'"> <span id="hero-gold">0</span>
-            <img src="images/gem_diamond.png" class="currency-icon" onerror="this.style.display='none'"> <span id="hero-diamonds">0</span>
-        </div>
-    </div>
-    <div id="main-body">
-        <div>
-            <img src="images/hero.jpg" alt="Герой" class="hero-avatar" onerror="this.style.display='none'">
-            <div>
+
+        <div id="main-body">
+            <div class="panel hero-panel">
+                <img src="images/hero.jpg" alt="Герой" class="hero-avatar" onerror="this.style.display='none'">
                 <h2>БОЕВЫЕ СТАТЫ</h2>
-                <div>
-                    <span>HP: <span id="hero-hp">200</span></span>
-                </div>
-                <div>
-                    <span>Урон: <span id="hero-damage">100</span></span>
-                </div>
-                <div>
-                    <span>Шанс крита: <span id="hero-crit-chance">0.0%</span></span>
-                </div>
-                <div>
-                    <span>Крит урон: <span id="hero-crit-damage">100.0%</span></span>
-                </div>
-                <div>
-                    <span>Уклонение: <span id="hero-evade">0.0%</span></span>
-                </div>
-            </div>
-        </div>
-        <div>
-            <h2>ЭКИПИРОВКА</h2>
-            <div id="equip-grid">
-                <div class="equip-slot" data-slot="weapon">ОРУЖИЕ</div>
-                <div class="equip-slot" data-slot="helmet">ШЛЕМ</div>
-                <div class="equip-slot" data-slot="chest">НУГРУДНИК</div>
-                <div class="equip-slot" data-slot="legs">ПОНожИ</div>
-                <div class="equip-slot" data-slot="boots">БОТИНКИ</div>
-                <div class="equip-slot" data-slot="shield">ЩИТ</div>
+                <div class="stat-line"><span>HP:</span> <span id="hero-hp">200</span></div>
+                <div class="stat-line"><span>Урон:</span> <span id="hero-damage">100</span></div>
+                <div class="stat-line"><span>Шанс крита:</span> <span id="hero-crit-chance">0.0%</span></div>
+                <div class="stat-line"><span>Крит урон:</span> <span id="hero-crit-damage">100.0%</span></div>
+                <div class="stat-line"><span>Уклонение:</span> <span id="hero-evade">0.0%</span></div>
             </div>
 
-            <div id="equip-modal" class="modal hidden">
-              <div class="modal-content">
-                <h2>ВЫБЕРИ <span id="modal-slot-name"></span></h2>
-                <div id="modal-items" class="modal-items-grid"></div>
-                <button class="modal-close">ЗАКРЫТЬ</button>
-              </div>
+            <div class="panel equip-panel">
+                <h2>ЭКИПИРОВКА</h2>
+                <div id="equip-grid">
+                    <div class="equip-slot" data-slot="weapon">ОРУЖИЕ</div>
+                    <div class="equip-slot" data-slot="helmet">ШЛЕМ</div>
+                    <div class="equip-slot" data-slot="chest">НАГРУДНИК</div>
+                    <div class="equip-slot" data-slot="legs">ПОНОЖИ</div>
+                    <div class="equip-slot" data-slot="boots">БОТИНКИ</div>
+                    <div class="equip-slot" data-slot="shield">ЩИТ</div>
+                </div>
             </div>
-        </div>
-        <div>
-            <h2>ХАРАКТЕРИСТИКИ</h2>
-            <div class="stat-row">
-                <img src="images/icon_str.png" class="stat-icon" onerror="this.style.display='none'">
-                <span>СИЛА</span>
-                <span id="str">0</span>
-                <button onclick="addStat('str')" class="stat-plus">+</button>
-            </div>
-            <div class="stat-row">
-                <img src="images/icon_agi.png" class="stat-icon" onerror="this.style.display='none'">
-                <span>ЛОВКОСТЬ</span>
-                <span id="agi">0</span>
-                <button onclick="addStat('agi')" class="stat-plus">+</button>
-            </div>
-            <div class="stat-row">
-                <img src="images/icon_sta.png" class="stat-icon" onerror="this.style.display='none'">
-                <span>СТОЙКОСТЬ</span>
-                <span id="sta">0</span>
-                <button onclick="addStat('sta')" class="stat-plus">+</button>
-            </div>
-            <div>
-                <span>Свободных очков: <span id="hero-unspent-points">0</span></span>
-            </div>
-            <div>
-                <h2>ИТОГОВЫЕ СТАТЫ</h2>
-                <!-- Здесь будут итоговые статы -->
-            </div>
-        </div>
-    </div>
-    <div id="bottom-nav">
-        <button onclick="goToScreen('map-screen')" class="nav-btn">
-            <img src="images/button_map.png" class="btn-icon" onerror="this.style.display='none'"> КАРТА
-        </button>
-        <button onclick="goToScreen('shop-screen')" class="nav-btn">
-            <img src="images/button_shop.png" class="btn-icon" onerror="this.style.display='none'"> МАГАЗИН
-        </button>
-    </div>
 
-    <div id="map-screen" class="screen">
-        <h1>ВЫБОР БОССА</h1>
-        <div id="boss-list" class="boss-list"></div>
-        <div class="buttons">
-            <button onclick="goToScreen('main-screen')">НАЗАД</button>
+            <div class="panel stats-panel">
+                <h2>ХАРАКТЕРИСТИКИ</h2>
+                <div class="stat-row">
+                    <img src="images/icon_str.png" class="stat-icon" onerror="this.style.display='none'">
+                    <span>СИЛА</span>
+                    <span id="str">0</span>
+                    <button onclick="addStat('str')" class="stat-plus">+</button>
+                </div>
+                <div class="stat-row">
+                    <img src="images/icon_agi.png" class="stat-icon" onerror="this.style.display='none'">
+                    <span>ЛОВКОСТЬ</span>
+                    <span id="agi">0</span>
+                    <button onclick="addStat('agi')" class="stat-plus">+</button>
+                </div>
+                <div class="stat-row">
+                    <img src="images/icon_sta.png" class="stat-icon" onerror="this.style.display='none'">
+                    <span>СТОЙКОСТЬ</span>
+                    <span id="sta">0</span>
+                    <button onclick="addStat('sta')" class="stat-plus">+</button>
+                </div>
+                <div class="unspent">Свободных очков: <span id="hero-unspent-points">0</span></div>
+            </div>
         </div>
-    </div>
 
-    <div id="battle-screen" class="screen">
-        <h1>БОЙ</h1>
-        <div class="hero">
-            <img src="images/hero.jpg" alt="Герой" class="hero-img-battle" onerror="this.style.display='none'">
-            <div class="hero-stats">
-                <div>
-                    <span>Герой</span>
-                </div>
-                <div>
-                    <span>HP: <span id="hero-battle-hp">200</span> / <span id="hero-battle-max-hp">200</span></span>
-                    <div class="hp-bar">
-                        <div id="hero-hp-bar" class="hp-bar-fill hero-hp-fill"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="boss">
-            <img src="images/boss.jpg" alt="Древний дракон" class="boss-img-battle" onerror="this.style.display='none'">
-            <div class="boss-stats">
-                <div>
-                    <span>Древний дракон</span>
-                </div>
-                <div>
-                    <span>HP: <span id="boss-battle-hp">2000</span> / <span id="boss-battle-max-hp">2000</span></span>
-                    <div class="hp-bar">
-                        <div id="boss-hp-bar" class="hp-bar-fill boss-hp-fill"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="log" id="battle-log"></div>
-        <div class="buttons">
-            <button id="attack-button" onclick="attack()">
-                <img src="images/button_attack.png" class="btn-icon" onerror="this.style.display='none'"> АТАКА
+        <div id="bottom-nav">
+            <button onclick="goToScreen('map-screen')" class="nav-btn">
+                <img src="images/button_map.png" class="btn-icon" onerror="this.style.display='none'"> КАРТА
+            </button>
+            <button onclick="goToScreen('shop-screen')" class="nav-btn">
+                <img src="images/button_shop.png" class="btn-icon" onerror="this.style.display='none'"> МАГАЗИН
+            </button>
+            <button onclick="goToScreen('inventory-screen')" class="nav-btn">
+                <img src="images/button_bag.png" class="btn-icon" onerror="this.style.display='none'"> ИНВЕНТАРЬ
             </button>
         </div>
     </div>
 
-    <div id="shop-screen" class="screen">
-        <h1>МАГАЗИН</h1>
-        <div id="screen-shop">
-            <div id="shop-tabs">
-                <button class="shop-tab active" data-type="weapon">ОРУЖИЕ</button>
-                <button class="shop-tab" data-type="helmet">ШЛЕМЫ</button>
-                <button class="shop-tab" data-type="chest">НАГРУДНИКИ</button>
-                <button class="shop-tab" data-type="legs">ПОНОЖИ</button>
-                <button class="shop-tab" data-type="boots">БОТИНКИ</button>
-                <button class="shop-tab" data-type="shield">ЩИТЫ</button>
-                <button class="back-btn" onclick="goToScreen('main-screen')">НАЗАД</button>
+    <!-- ================= КАРТА / СПИСОК БОССОВ ================= -->
+    <div id="map-screen" class="screen">
+        <div class="screen-header">
+            <h1>ВЫБОР БОССА</h1>
+            <button class="back-btn" onclick="goToScreen('main-screen')">НАЗАД</button>
+        </div>
+        <div id="boss-list" class="boss-list"></div>
+    </div>
+
+    <!-- ================= БОЙ ================= -->
+    <div id="battle-screen" class="screen">
+        <div class="screen-header">
+            <h1>БОЙ</h1>
+            <button class="back-btn" onclick="goToScreen('map-screen')">СБЕЖАТЬ</button>
+        </div>
+        <div class="battle-arena">
+            <div class="fighter hero-fighter">
+                <img src="images/hero.jpg" alt="Герой" class="hero-img-battle" onerror="this.style.display='none'">
+                <div class="fighter-name">Герой</div>
+                <div class="hp-bar">
+                    <div id="hero-hp-bar" class="hp-bar-fill hero-hp-fill"></div>
+                </div>
+                <div class="hp-text">HP: <span id="hero-battle-hp">200</span> / <span id="hero-battle-max-hp">200</span></div>
             </div>
-            <div id="shop-grid" class="shop-grid"></div>
+            <div class="vs">VS</div>
+            <div class="fighter boss-fighter">
+                <img id="boss-img-battle" src="images/boss.jpg" alt="Босс" class="boss-img-battle" onerror="this.style.display='none'">
+                <div class="fighter-name" id="boss-name-battle">Босс</div>
+                <div class="hp-bar">
+                    <div id="boss-hp-bar" class="hp-bar-fill boss-hp-fill"></div>
+                </div>
+                <div class="hp-text">HP: <span id="boss-battle-hp">2000</span> / <span id="boss-battle-max-hp">2000</span></div>
+            </div>
+        </div>
+        <div class="log" id="battle-log"></div>
+        <div class="buttons">
+            <button id="attack-button" onclick="attack()">АТАКА</button>
+        </div>
+    </div>
+
+    <!-- ================= МАГАЗИН ================= -->
+    <div id="shop-screen" class="screen">
+        <div class="screen-header">
+            <h1>МАГАЗИН</h1>
+            <button class="back-btn" onclick="goToScreen('main-screen')">НАЗАД</button>
+        </div>
+        <div id="shop-tabs">
+            <button class="shop-tab active" data-type="weapon">ОРУЖИЕ</button>
+            <button class="shop-tab" data-type="helmet">ШЛЕМЫ</button>
+            <button class="shop-tab" data-type="chest">НАГРУДНИКИ</button>
+            <button class="shop-tab" data-type="legs">ПОНОЖИ</button>
+            <button class="shop-tab" data-type="boots">БОТИНКИ</button>
+            <button class="shop-tab" data-type="shield">ЩИТЫ</button>
+        </div>
+        <div id="shop-grid" class="shop-grid"></div>
+    </div>
+
+    <!-- ================= ИНВЕНТАРЬ ================= -->
+    <div id="inventory-screen" class="screen">
+        <div class="screen-header">
+            <h1>ИНВЕНТАРЬ</h1>
+            <button class="back-btn" onclick="goToScreen('main-screen')">НАЗАД</button>
+        </div>
+        <div id="inventory-grid" class="inventory-grid"></div>
+        <div id="inventory-empty" class="empty-note hidden">Инвентарь пуст. Загляните в магазин!</div>
+    </div>
+
+    <!-- ================= МОДАЛКА ВЫБОРА ПРЕДМЕТА ================= -->
+    <div id="equip-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>ВЫБЕРИ <span id="modal-slot-name"></span></h2>
+            <div id="modal-items" class="modal-items-grid"></div>
+            <button class="modal-close" onclick="closeEquipModal()">ЗАКРЫТЬ</button>
         </div>
     </div>
 

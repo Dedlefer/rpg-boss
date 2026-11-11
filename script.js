@@ -1,9 +1,6 @@
-const tg = window.Telegram?.WebApp;
-if (tg) {
-  tg.ready();
-  tg.expand();
-  console.log('TG user:', tg.initDataUnsafe?.user);
-}
+/* ============================================================
+   ДАННЫЕ ГЕРОЯ
+   ============================================================ */
 const hero = {
     level: 1,
     xp: 0,
@@ -21,9 +18,15 @@ const hero = {
     silver: 0,
     gold: 0,
     diamonds: 0,
+    // Купленные предметы (id)
+    inventory: [],
+    // Надетые предметы (id)
     equipment: []
 };
 
+/* ============================================================
+   БОССЫ
+   ============================================================ */
 const bosses = [
     { id: 'boss-1', name: 'Крыса-мутант', levelRequired: 1, hp: 500, damage: 3, reward: { xp: 50, silver: 50, gold: 5 }, image: 'images/boss_rat.png', description: 'Грызун из подземелий.' },
     { id: 'boss-2', name: 'Гигантская паучиха', levelRequired: 5, hp: 1000, damage: 6, reward: { xp: 150, silver: 150, gold: 15 }, image: 'images/boss_spider.png', description: 'Плетёт сети.' },
@@ -34,8 +37,9 @@ const bosses = [
     { id: 'boss-7', name: 'Древний дракон', levelRequired: 30, hp: 5000, damage: 20, reward: { xp: 3000, silver: 3000, gold: 300 }, image: 'images/boss.png', description: 'Страж подземелья.' }
 ];
 
-let defeatedBosses = JSON.parse(localStorage.getItem('defeatedBosses')) || [];
-
+/* ============================================================
+   ПРЕДМЕТЫ
+   ============================================================ */
 const items = [
     { id: 'item-1', name: 'Деревянная дубинка', type: 'weapon', damageBonus: 30, price: { silver: 1500, gold: 300 }, image: 'images/weapon_wooden_club.jpg' },
     { id: 'item-2', name: 'Железный меч', type: 'weapon', damageBonus: 50, price: { silver: 3000, gold: 600 }, image: 'images/weapon_iron_sword.jpg' },
@@ -53,146 +57,48 @@ const items = [
     { id: 'item-14', name: 'Железный щит', type: 'shield', hpBonus: 50, evadeBonus: 3, price: { silver: 4000, gold: 800 }, image: 'images/armor_iron_shield.png' }
 ];
 
-function updateStats() {
-    const stats = calcStats();
-    hero.hp = stats.hp;
-    hero.maxHp = stats.maxHp;
-    hero.damage = stats.damage;
-    hero.critChance = stats.critChance;
-    hero.critDamage = stats.critDamage;
-    hero.evade = stats.evade;
+const SLOT_LABELS = {
+    weapon: 'ОРУЖИЕ', helmet: 'ШЛЕМ', chest: 'НАГРУДНИК',
+    legs: 'ПОНОЖИ', boots: 'БОТИНКИ', shield: 'ЩИТ'
+};
 
-    document.getElementById('hero-level').textContent = hero.level;
-    document.getElementById('hero-xp').textContent = hero.xp;
-    document.getElementById('hero-xp-to-next').textContent = hero.xpToNext;
-    document.getElementById('hero-xp-bar').style.width = (hero.xp / hero.xpToNext) * 100 + '%';
-    document.getElementById('hero-unspent-points').textContent = hero.unspentPoints;
-    document.getElementById('hero-hp').textContent = hero.hp.toFixed(1);
-    document.getElementById('hero-damage').textContent = hero.damage.toFixed(1);
-    document.getElementById('hero-crit-chance').textContent = (hero.critChance * 100).toFixed(1) + '%';
-    document.getElementById('hero-crit-damage').textContent = (hero.critDamage).toFixed(1) + '%';
-    document.getElementById('hero-evade').textContent = (hero.evade * 100).toFixed(1) + '%';
-    document.getElementById('hero-silver').textContent = hero.silver;
-    document.getElementById('hero-gold').textContent = hero.gold;
-    document.getElementById('hero-diamonds').textContent = hero.diamonds;
-    renderEquipment();
+/* ============================================================
+   СОСТОЯНИЕ БОЯ
+   ============================================================ */
+let defeatedBosses = [];
+let currentBoss = null;
+let bossHp = 0, bossMaxHp = 0;
+
+/* ============================================================
+   ВСПОМОГАТЕЛЬНЫЕ
+   ============================================================ */
+function getItem(id) { return items.find(i => i.id === id); }
+
+function itemBonusText(item) {
+    const parts = [];
+    if (item.damageBonus) parts.push(`+${item.damageBonus} урона`);
+    if (item.hpBonus) parts.push(`+${item.hpBonus} HP`);
+    if (item.evadeBonus) parts.push(`+${item.evadeBonus}% уклонение`);
+    if (item.critChanceBonus) parts.push(`+${item.critChanceBonus}% крит`);
+    return parts.join(', ') || '—';
 }
 
-function addStat(stat) {
-    if (hero.unspentPoints > 0) {
-        hero[stat]++;
-        hero.unspentPoints--;
-        updateStats();
-    } else {
-        addLog('Нет свободных очков');
-    }
-}
-
+/* ============================================================
+   ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ
+   ============================================================ */
 function goToScreen(screenId) {
-    document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
+    if (screenId === 'map-screen') renderBosses();
+    if (screenId === 'shop-screen') renderShop();
+    if (screenId === 'inventory-screen') renderInventory();
 }
 
-function startBattle(bossIndex) {
-    const boss = bosses[bossIndex];
-    hero.hp = hero.maxHp;
-    boss.hp = boss.maxHp;
-    document.getElementById('hero-battle-hp').textContent = hero.hp.toFixed(1);
-    document.getElementById('hero-battle-max-hp').textContent = hero.maxHp.toFixed(1);
-    document.getElementById('boss-battle-hp').textContent = boss.hp.toFixed(1);
-    document.getElementById('boss-battle-max-hp').textContent = boss.maxHp.toFixed(1);
-    document.getElementById('hero-hp-bar').style.width = '100%';
-    document.getElementById('boss-hp-bar').style.width = '100%';
-    document.getElementById('battle-log').innerHTML = '';
-    document.getElementById('attack-button').textContent = 'АТАКА';
-    goToScreen('battle-screen');
-}
-
-function attack() {
-    // Hero attack
-    let damage = hero.damage;
-    if (Math.random() < hero.critChance / 100) {
-        damage = damage * (2 + hero.critDamage / 100);
-        document.getElementById('battle-log').innerHTML += '<div>КРИТ! ' + damage.toFixed(1) + ' урона</div>';
-    } else {
-        document.getElementById('battle-log').innerHTML += '<div>Герой атакует: ' + damage.toFixed(1) + ' урона</div>';
-    }
-    boss.hp -= damage;
-    document.getElementById('boss-battle-hp').textContent = boss.hp.toFixed(1);
-    document.getElementById('boss-hp-bar').style.width = (boss.hp / boss.maxHp) * 100 + '%';
-
-    // Boss attack
-    if (Math.random() > hero.evade / 100) {
-        hero.hp -= boss.damage;
-        document.getElementById('battle-log').innerHTML += '<div>Босс атакует: ' + boss.damage + ' урона</div>';
-        document.getElementById('hero-battle-hp').textContent = hero.hp.toFixed(1);
-        document.getElementById('hero-hp-bar').style.width = (hero.hp / hero.maxHp) * 100 + '%';
-    } else {
-        document.getElementById('battle-log').innerHTML += '<div>Герой уклоняется!</div>';
-    }
-
-    // Check win/lose
-    if (boss.hp <= 0) {
-        document.getElementById('battle-log').innerHTML += `<div>ПОБЕДА! ${boss.name} повержен.</div>`;
-        document.getElementById('battle-log').innerHTML += '<div><img src="images/reward_chest.png" class="reward-icon" onerror="this.style.display=\'none\'"></div>';
-        document.getElementById('battle-log').innerHTML += `<div>Награда: ${boss.reward.xp} XP, ${boss.reward.silver} серебра, ${boss.reward.gold} золота</div>`;
-        gainXP(boss.reward.xp);
-        gainCurrency(boss.reward.silver, boss.reward.gold);
-        defeatedBosses.push(boss.id);
-        localStorage.setItem('defeatedBosses', JSON.stringify(defeatedBosses));
-        goToScreen('main-screen');
-    } else if (hero.hp <= 0) {
-        document.getElementById('battle-log').innerHTML += '<div>ПОРАЖЕНИЕ. Герой пал.</div>';
-        document.getElementById('attack-button').textContent = 'В ГЛАВНОЕ МЕНЮ';
-        document.getElementById('attack-button').onclick = () => goToScreen('main-screen');
-    }
-
-    // Auto-scroll log
-    const log = document.getElementById('battle-log');
-    log.scrollTop = log.scrollHeight;
-}
-
-function gainXP(amount) {
-    hero.xp += amount;
-    if (hero.xp >= hero.xpToNext) {
-        hero.level++;
-        hero.xp -= hero.xpToNext;
-        hero.xpToNext = Math.floor(5000 * Math.pow(1.5, hero.level - 1));
-        hero.unspentPoints += 5;
-        hero.diamonds += 1;
-        addLog('УРОВЕНЬ ПОВЫШЕН! Уровень ' + hero.level + '. +5 очков, +1 алмаз.');
-    }
-    updateStats();
-}
-
-function gainCurrency(silver, gold) {
-    hero.silver += silver;
-    hero.gold += gold;
-    updateStats();
-}
-
-function buyItem(itemId, currency) {
-    const item = items.find(i => i.id === itemId);
-    if (hero.equipment.includes(item.name)) {
-        addLog(item.name + ' уже куплен.');
-        return;
-    }
-    if (currency === 'silver' && hero.silver >= item.price.silver) {
-        hero.silver -= item.price.silver;
-    } else if (currency === 'gold' && hero.gold >= item.price.gold) {
-        hero.gold -= item.price.gold;
-    } else {
-        addLog('Недостаточно ' + currency);
-        return;
-    }
-    hero.equipment.push(item.name);
-    addLog('Куплено: ' + item.name);
-    updateStats();
-    renderShop();
-}
-
+/* ============================================================
+   СТАТЫ
+   ============================================================ */
 function calcStats() {
-    const baseStats = {
+    const base = {
         hp: 200 + hero.sta * 20,
         maxHp: 200 + hero.sta * 20,
         damage: 100 + hero.str * 10,
@@ -201,207 +107,479 @@ function calcStats() {
         evade: Math.min(hero.agi * 0.2, 100)
     };
 
-    const equipmentStats = hero.equipment.reduce((acc, itemName) => {
-        const item = items.find(i => i.name === itemName);
-        if (item) {
-            if (item.damageBonus) acc.damage += item.damageBonus;
-            if (item.hpBonus) acc.hp += item.hpBonus;
-            if (item.evadeBonus) acc.evade += item.evadeBonus;
-            if (item.critChanceBonus) acc.critChance += item.critChanceBonus;
-        }
-        return acc;
-    }, { hp: 0, damage: 0, evade: 0, critChance: 0 });
+    const bonus = { hp: 0, damage: 0, evade: 0, critChance: 0 };
+    hero.equipment.forEach(id => {
+        const item = getItem(id);
+        if (!item) return;
+        if (item.damageBonus) bonus.damage += item.damageBonus;
+        if (item.hpBonus) bonus.hp += item.hpBonus;
+        if (item.evadeBonus) bonus.evade += item.evadeBonus;
+        if (item.critChanceBonus) bonus.critChance += item.critChanceBonus;
+    });
 
     return {
-        hp: baseStats.hp + equipmentStats.hp,
-        maxHp: baseStats.maxHp + equipmentStats.hp,
-        damage: baseStats.damage + equipmentStats.damage,
-        critChance: baseStats.critChance + equipmentStats.critChance,
-        critDamage: baseStats.critDamage,
-        evade: baseStats.evade + equipmentStats.evade
+        hp: base.hp + bonus.hp,
+        maxHp: base.maxHp + bonus.hp,
+        damage: base.damage + bonus.damage,
+        critChance: Math.min(base.critChance + bonus.critChance, 100),
+        critDamage: base.critDamage,
+        evade: Math.min(base.evade + bonus.evade, 100)
     };
 }
 
-function renderEquipment() {
-    const slots = document.querySelectorAll('.equipment-slot');
-    slots.forEach(slot => {
-        slot.classList.add('empty');
-        slot.textContent = '';
-        slot.innerHTML = '';
-        slot.classList.remove('slot-equipped');
-    });
+function updateStats() {
+    const stats = calcStats();
+    const oldMax = hero.maxHp;
+    hero.maxHp = stats.maxHp;
+    hero.damage = stats.damage;
+    hero.critChance = stats.critChance;
+    hero.critDamage = stats.critDamage;
+    hero.evade = stats.evade;
+    // Если текущее HP больше максимума — подрезаем, иначе восстанавливаем пропорционально
+    if (hero.hp > hero.maxHp || oldMax === 0) hero.hp = hero.maxHp;
+    else if (hero.hp < hero.maxHp && oldMax !== hero.maxHp) hero.hp = Math.min(hero.hp, hero.maxHp);
 
-    hero.equipment.forEach(itemName => {
-        const item = items.find(i => i.name === itemName);
-        const slot = document.querySelector('.equipment-slot[data-slot="' + item.type + '"]');
-        if (slot) {
+    document.getElementById('hero-level').textContent = hero.level;
+    document.getElementById('hero-xp').textContent = hero.xp;
+    document.getElementById('hero-xp-to-next').textContent = hero.xpToNext;
+    document.getElementById('hero-xp-bar').style.width = (hero.xp / hero.xpToNext) * 100 + '%';
+    document.getElementById('hero-unspent-points').textContent = hero.unspentPoints;
+    document.getElementById('hero-hp').textContent = hero.maxHp.toFixed(1);
+    document.getElementById('hero-damage').textContent = hero.damage.toFixed(1);
+    document.getElementById('hero-crit-chance').textContent = hero.critChance.toFixed(1) + '%';
+    document.getElementById('hero-crit-damage').textContent = hero.critDamage.toFixed(1) + '%';
+    document.getElementById('hero-evade').textContent = hero.evade.toFixed(1) + '%';
+    document.getElementById('hero-silver').textContent = hero.silver;
+    document.getElementById('hero-gold').textContent = hero.gold;
+    document.getElementById('hero-diamonds').textContent = hero.diamonds;
+    document.getElementById('str').textContent = hero.str;
+    document.getElementById('agi').textContent = hero.agi;
+    document.getElementById('sta').textContent = hero.sta;
+    renderEquipment();
+    saveGame();
+}
+
+function addStat(stat) {
+    if (hero.unspentPoints <= 0) return;
+    hero[stat]++;
+    hero.unspentPoints--;
+    updateStats();
+}
+
+/* ============================================================
+   ЭКИПИРОВКА (отрисовка)
+   ============================================================ */
+function renderEquipment() {
+    document.querySelectorAll('.equip-slot').forEach(slot => {
+        const type = slot.dataset.slot;
+        const equippedId = hero.equipment.find(id => {
+            const it = getItem(id);
+            return it && it.type === type;
+        });
+        if (equippedId) {
+            const item = getItem(equippedId);
             slot.classList.remove('empty');
             slot.classList.add('slot-equipped');
-            slot.textContent = itemName;
             slot.innerHTML = `
-                <img src="${item.image}" alt="${itemName}" class="equip-img" onerror="this.style.display='none'">
-                <div class="slot-name">${itemName}</div>
+                <img src="${item.image}" alt="${item.name}" class="equip-img" onerror="this.style.display='none'">
+                <div class="slot-name">${item.name}</div>
                 <div class="slot-bonus">${itemBonusText(item)}</div>
             `;
+        } else {
+            slot.classList.add('empty');
+            slot.classList.remove('slot-equipped');
+            slot.textContent = SLOT_LABELS[type] || type.toUpperCase();
         }
     });
 }
 
-function openEquipModal(slot) {
+/* ============================================================
+   МОДАЛКА ВЫБОРА ПРЕДМЕТА ДЛЯ СЛОТА
+   ============================================================ */
+function openEquipModal(type) {
     document.getElementById('equip-modal').classList.remove('hidden');
-    document.getElementById('modal-slot-name').textContent = slot.dataset.slot.toUpperCase();
-    renderModalItems(slot.dataset.slot);
+    document.getElementById('modal-slot-name').textContent = SLOT_LABELS[type] || type.toUpperCase();
+    renderModalItems(type);
 }
 
 function closeEquipModal() {
     document.getElementById('equip-modal').classList.add('hidden');
 }
 
-function renderModalItems(slot) {
-    const modalItems = document.getElementById('modal-items');
-    modalItems.innerHTML = '';
+function renderModalItems(type) {
+    const container = document.getElementById('modal-items');
+    container.innerHTML = '';
 
-    const equippedItem = hero.equipment.find(itemName => items.find(i => i.name === itemName && i.type === slot));
-    if (equippedItem) {
-        const item = items.find(i => i.name === equippedItem);
-        const itemElement = document.createElement('div');
-        itemElement.classList.add('modal-item');
-        itemElement.innerHTML = `
-            <img src="${item.image}" alt="${item.name}" class="item-img" onerror="this.style.display='none'">
-            <h2>${item.name}</h2>
-            <p>Урон: +${item.damageBonus || 0}</p>
-            <p>HP: +${item.hpBonus || 0}</p>
-            <p>Уклонение: +${item.evadeBonus || 0}%</p>
-            <p>Шанс крита: +${item.critChanceBonus || 0}%</p>
-            <button onclick="unequipItem('${slot}')">СНЯТЬ</button>
+    // Надетый сейчас предмет в этот слот
+    const equippedId = hero.equipment.find(id => {
+        const it = getItem(id);
+        return it && it.type === type;
+    });
+
+    if (equippedId) {
+        const item = getItem(equippedId);
+        const div = document.createElement('div');
+        div.className = 'modal-item';
+        div.innerHTML = `
+            <img src="${item.image}" class="item-img" onerror="this.style.display='none'">
+            <h3>${item.name}</h3>
+            <p>${itemBonusText(item)}</p>
+            <button onclick="unequipItem('${type}')">СНЯТЬ</button>
         `;
-        modalItems.appendChild(itemElement);
-    } else {
-        const noItemsElement = document.createElement('div');
-        noItemsElement.textContent = 'Нет купленных предметов';
-        modalItems.appendChild(noItemsElement);
-
-        const shopButton = document.createElement('button');
-        shopButton.textContent = 'В МАГАЗИН';
-        shopButton.onclick = () => goToScreen('shop-screen');
-        modalItems.appendChild(shopButton);
+        container.appendChild(div);
     }
+
+    // Предметы этого типа из инвентаря (кроме надетого)
+    const available = hero.inventory.filter(id => {
+        const it = getItem(id);
+        return it && it.type === type && id !== equippedId;
+    });
+
+    if (available.length === 0 && !equippedId) {
+        const empty = document.createElement('div');
+        empty.textContent = 'Нет предметов этого типа в инвентаре';
+        container.appendChild(empty);
+        return;
+    }
+
+    available.forEach(id => {
+        const item = getItem(id);
+        const div = document.createElement('div');
+        div.className = 'modal-item';
+        div.innerHTML = `
+            <img src="${item.image}" class="item-img" onerror="this.style.display='none'">
+            <h3>${item.name}</h3>
+            <p>${itemBonusText(item)}</p>
+            <button onclick="equipItem('${id}')">НАДЕТЬ</button>
+        `;
+        container.appendChild(div);
+    });
 }
 
-function equipItem(slot, itemId) {
-    const item = items.find(i => i.id === itemId);
-    hero.equipment = hero.equipment.filter(itemName => items.find(i => i.name === itemName && i.type !== slot));
-    hero.equipment.push(item.name);
+function equipItem(itemId) {
+    const item = getItem(itemId);
+    if (!item) return;
+    // Снимаем текущий предмет этого слота (возвращаем в инвентарь)
+    hero.equipment = hero.equipment.filter(id => {
+        const it = getItem(id);
+        return !(it && it.type === item.type);
+    });
+    // Убираем предмет из инвентаря и надеваем
+    hero.inventory = hero.inventory.filter(id => id !== itemId);
+    hero.equipment.push(itemId);
     updateStats();
-    saveGame();
     closeEquipModal();
-    renderEquipment();
+    renderInventory();
 }
 
-function unequipItem(slot) {
-    hero.equipment = hero.equipment.filter(itemName => items.find(i => i.name === itemName && i.type !== slot));
+function unequipItem(type) {
+    const equippedId = hero.equipment.find(id => {
+        const it = getItem(id);
+        return it && it.type === type;
+    });
+    if (!equippedId) return;
+    hero.equipment = hero.equipment.filter(id => id !== equippedId);
+    if (!hero.inventory.includes(equippedId)) hero.inventory.push(equippedId);
     updateStats();
-    saveGame();
     closeEquipModal();
-    renderEquipment();
+    renderInventory();
 }
 
-document.querySelectorAll('.equip-slot').forEach(slot => {
-    slot.addEventListener('click', () => openEquipModal(slot));
-});
-
-document.querySelector('.modal-close').addEventListener('click', closeEquipModal);
-
-function itemBonusText(item) {
-    let text = '';
-    if (item.damageBonus) text += '+50 урона';
-    if (item.hpBonus) text += '+30 HP';
-    if (item.dodgeBonus) text += '+2% уклонение';
-    if (item.critChanceBonus) text += '+5% шанс крита';
-    return text;
-}
+/* ============================================================
+   МАГАЗИН
+   ============================================================ */
+let currentShopTab = 'weapon';
 
 function renderShop() {
-    const shopGrid = document.getElementById('shop-grid');
-    shopGrid.innerHTML = '';
-    items.forEach(item => {
-        if (hero.equipment.includes(item.name)) return;
-        const itemElement = document.createElement('div');
-        itemElement.classList.add('shop-item');
-        itemElement.innerHTML = `
-            <img src="${item.image}" alt="${item.name}" class="item-img" onerror="this.style.display='none'">
-            <h2>${item.name}</h2>
-            <p>Урон: +${item.damageBonus || 0}</p>
-            <p>HP: +${item.hpBonus || 0}</p>
-            <p>Уклонение: +${item.evadeBonus || 0}%</p>
-            <p>Шанс крита: +${item.critChanceBonus || 0}%</p>
+    document.querySelectorAll('.shop-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.type === currentShopTab);
+    });
+    const grid = document.getElementById('shop-grid');
+    grid.innerHTML = '';
+    const filtered = items.filter(i => i.type === currentShopTab);
+
+    filtered.forEach(item => {
+        const owned = hero.inventory.includes(item.id) || hero.equipment.includes(item.id);
+        const div = document.createElement('div');
+        div.className = 'shop-item' + (owned ? ' bought' : '');
+        div.innerHTML = `
+            <img src="${item.image}" class="item-img" onerror="this.style.display='none'">
+            <h3>${item.name}</h3>
+            <p>${itemBonusText(item)}</p>
             <div class="price">
                 <img src="images/coin_silver.png" class="price-icon" onerror="this.style.display='none'"> ${item.price.silver}
                 <img src="images/coin_gold.png" class="price-icon" onerror="this.style.display='none'"> ${item.price.gold}
             </div>
-            <button onclick="buyItem('${item.id}', 'silver')">КУПИТЬ (серебро)</button>
-            <button onclick="buyItem('${item.id}', 'gold')">КУПИТЬ (золото)</button>
+            ${owned
+                ? '<div class="owned-label">КУПЛЕНО</div>'
+                : `<button onclick="buyItem('${item.id}')">КУПИТЬ</button>`}
         `;
-        shopGrid.appendChild(itemElement);
+        grid.appendChild(div);
     });
 }
 
-function switchShopTab(type) {
-    document.querySelectorAll('.shop-tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    document.querySelector(`.shop-tab[data-type="${type}"]`).classList.add('active');
+function buyItem(itemId) {
+    const item = getItem(itemId);
+    if (!item) return;
+    if (hero.inventory.includes(itemId) || hero.equipment.includes(itemId)) return;
+
+    // Пытаемся списать: сначала серебро, если хватает; иначе золото
+    if (hero.silver >= item.price.silver) {
+        hero.silver -= item.price.silver;
+    } else if (hero.gold >= item.price.gold) {
+        hero.gold -= item.price.gold;
+    } else {
+        alert('Недостаточно средств');
+        return;
+    }
+
+    hero.inventory.push(itemId);
+    updateStats();
     renderShop();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    switchShopTab('weapon');
-    renderBosses();
-});
+/* ============================================================
+   ИНВЕНТАРЬ
+   ============================================================ */
+function renderInventory() {
+    const grid = document.getElementById('inventory-grid');
+    const empty = document.getElementById('inventory-empty');
+    grid.innerHTML = '';
+    if (hero.inventory.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+    }
+    empty.classList.add('hidden');
 
-function addLog(text) {
+    hero.inventory.forEach(id => {
+        const item = getItem(id);
+        if (!item) return;
+        const div = document.createElement('div');
+        div.className = 'inventory-item';
+        div.innerHTML = `
+            <img src="${item.image}" class="item-img" onerror="this.style.display='none'">
+            <h3>${item.name}</h3>
+            <p class="item-type">${SLOT_LABELS[item.type]}</p>
+            <p>${itemBonusText(item)}</p>
+            <button onclick="equipFromInventory('${item.id}')">НАДЕТЬ</button>
+        `;
+        grid.appendChild(div);
+    });
+}
+
+function equipFromInventory(itemId) {
+    const item = getItem(itemId);
+    if (!item) return;
+    // Снимаем текущий из слота
+    const oldId = hero.equipment.find(id => {
+        const it = getItem(id);
+        return it && it.type === item.type;
+    });
+    if (oldId) hero.inventory.push(oldId);
+    hero.equipment = hero.equipment.filter(id => id !== oldId);
+    // Надеваем новый
+    hero.inventory = hero.inventory.filter(id => id !== itemId);
+    hero.equipment.push(itemId);
+    updateStats();
+    renderInventory();
+}
+
+/* ============================================================
+   КАРТА / БОССЫ
+   ============================================================ */
+function renderBosses() {
+    const list = document.getElementById('boss-list');
+    list.innerHTML = '';
+    bosses.forEach((boss, index) => {
+        const locked = hero.level < boss.levelRequired;
+        const defeated = defeatedBosses.includes(boss.id);
+        const row = document.createElement('div');
+        row.className = 'boss-row' + (locked ? ' locked' : '') + (defeated ? ' defeated' : '');
+        row.innerHTML = `
+            <img src="${boss.image}" class="boss-thumb" onerror="this.style.display='none'">
+            <div class="boss-info">
+                <h3>${boss.name}</h3>
+                <p class="boss-desc">${boss.description}</p>
+                <p>HP: ${boss.hp} · Урон: ${boss.damage} · Треб. уровень: ${boss.levelRequired}</p>
+            </div>
+            <div class="boss-status">
+                ${defeated ? '<span class="badge defeated-badge">ПОВЕРЖЕН</span>' : ''}
+                ${locked ? '<span class="badge locked-badge">ЗАКРЫТ</span>' : ''}
+            </div>
+            <button class="btn-fight" ${locked ? 'disabled' : ''} onclick="startBattle(${index})">СРАЗИТЬСЯ</button>
+        `;
+        list.appendChild(row);
+    });
+}
+
+/* ============================================================
+   БОЙ
+   ============================================================ */
+function startBattle(index) {
+    const boss = bosses[index];
+    if (hero.level < boss.levelRequired) return;
+
+    currentBoss = boss;
+    bossMaxHp = boss.hp;
+    bossHp = boss.hp;
+    hero.hp = hero.maxHp;
+
+    document.getElementById('hero-battle-hp').textContent = hero.hp.toFixed(1);
+    document.getElementById('hero-battle-max-hp').textContent = hero.maxHp.toFixed(1);
+    document.getElementById('boss-name-battle').textContent = boss.name;
+    document.getElementById('boss-img-battle').src = boss.image;
+    document.getElementById('boss-battle-hp').textContent = bossHp.toFixed(1);
+    document.getElementById('boss-battle-max-hp').textContent = bossMaxHp.toFixed(1);
+    document.getElementById('hero-hp-bar').style.width = '100%';
+    document.getElementById('boss-hp-bar').style.width = '100%';
+
     const log = document.getElementById('battle-log');
-    log.innerHTML += '<div>' + text + '</div>';
+    log.innerHTML = '';
+    addBattleLog(`Бой начался: ${boss.name}!`);
+
+    const btn = document.getElementById('attack-button');
+    btn.textContent = 'АТАКА';
+    btn.onclick = attack;
+
+    goToScreen('battle-screen');
+}
+
+function addBattleLog(text) {
+    const log = document.getElementById('battle-log');
+    const div = document.createElement('div');
+    div.innerHTML = text;
+    log.appendChild(div);
     log.scrollTop = log.scrollHeight;
 }
 
+function attack() {
+    if (!currentBoss) return;
+
+    // Атака героя
+    let dmg = hero.damage;
+    const isCrit = Math.random() * 100 < hero.critChance;
+    if (isCrit) {
+        dmg = dmg * (2 + hero.critDamage / 100);
+        addBattleLog(`<span class="crit">КРИТ! ${dmg.toFixed(1)} урона</span>`);
+    } else {
+        addBattleLog(`Герой наносит ${dmg.toFixed(1)} урона`);
+    }
+    bossHp -= dmg;
+    if (bossHp < 0) bossHp = 0;
+    document.getElementById('boss-battle-hp').textContent = bossHp.toFixed(1);
+    document.getElementById('boss-hp-bar').style.width = (bossHp / bossMaxHp) * 100 + '%';
+
+    if (bossHp <= 0) {
+        winBattle();
+        return;
+    }
+
+    // Атака босса
+    if (Math.random() * 100 < hero.evade) {
+        addBattleLog('Герой уклоняется от атаки!');
+    } else {
+        hero.hp -= currentBoss.damage;
+        if (hero.hp < 0) hero.hp = 0;
+        addBattleLog(`${currentBoss.name} наносит ${currentBoss.damage} урона`);
+        document.getElementById('hero-battle-hp').textContent = hero.hp.toFixed(1);
+        document.getElementById('hero-hp-bar').style.width = (hero.hp / hero.maxHp) * 100 + '%';
+    }
+
+    if (hero.hp <= 0) loseBattle();
+}
+
+function winBattle() {
+    const boss = currentBoss;
+    addBattleLog(`<span class="win">ПОБЕДА! ${boss.name} повержен.</span>`);
+    addBattleLog(`Награда: ${boss.reward.xp} XP, ${boss.reward.silver} серебра, ${boss.reward.gold} золота`);
+
+    if (!defeatedBosses.includes(boss.id)) defeatedBosses.push(boss.id);
+    hero.silver += boss.reward.silver;
+    hero.gold += boss.reward.gold;
+    gainXP(boss.reward.xp);
+
+    currentBoss = null;
+    const btn = document.getElementById('attack-button');
+    btn.textContent = 'В ГЛАВНОЕ МЕНЮ';
+    btn.onclick = () => goToScreen('main-screen');
+    updateStats();
+    saveGame();
+}
+
+function loseBattle() {
+    addBattleLog('<span class="lose">ПОРАЖЕНИЕ. Герой пал.</span>');
+    currentBoss = null;
+    const btn = document.getElementById('attack-button');
+    btn.textContent = 'В ГЛАВНОЕ МЕНЮ';
+    btn.onclick = () => goToScreen('main-screen');
+}
+
+/* ============================================================
+   ОПЫТ / УРОВЕНЬ
+   ============================================================ */
+function gainXP(amount) {
+    hero.xp += amount;
+    while (hero.xp >= hero.xpToNext) {
+        hero.xp -= hero.xpToNext;
+        hero.level++;
+        hero.xpToNext = Math.floor(5000 * Math.pow(1.5, hero.level - 1));
+        hero.unspentPoints += 5;
+        hero.diamonds += 1;
+    }
+    updateStats();
+}
+
+/* ============================================================
+   СОХРАНЕНИЕ / ЗАГРУЗКА
+   ============================================================ */
 function saveGame() {
     localStorage.setItem('hero', JSON.stringify(hero));
+    localStorage.setItem('defeatedBosses', JSON.stringify(defeatedBosses));
 }
 
 function loadGame() {
     const savedHero = localStorage.getItem('hero');
     if (savedHero) {
-        Object.assign(hero, JSON.parse(savedHero));
+        try { Object.assign(hero, JSON.parse(savedHero)); } catch (e) {}
     }
-    const savedDefeatedBosses = localStorage.getItem('defeatedBosses');
-    if (savedDefeatedBosses) {
-        defeatedBosses = JSON.parse(savedDefeatedBosses);
+    // Совместимость со старой версией (equipment хранил имена)
+    if (hero.equipment && hero.equipment.length && typeof hero.equipment[0] === 'string' && !hero.equipment[0].startsWith('item-')) {
+        hero.equipment = [];
+        hero.inventory = [];
+    }
+    if (!Array.isArray(hero.inventory)) hero.inventory = [];
+    if (!Array.isArray(hero.equipment)) hero.equipment = [];
+
+    const savedBosses = localStorage.getItem('defeatedBosses');
+    if (savedBosses) {
+        try { defeatedBosses = JSON.parse(savedBosses); } catch (e) { defeatedBosses = []; }
     }
 }
 
-loadGame();
-updateStats();
-renderShop();
-function renderBosses() {
-    const bossList = document.getElementById('boss-list');
-    bossList.innerHTML = '';
-    bosses.forEach((boss, index) => {
-        const card = document.createElement('div');
-        card.classList.add('boss-card');
-        if (hero.level < boss.levelRequired) {
-            card.classList.add('locked');
-        } else if (defeatedBosses.includes(boss.id)) {
-            card.classList.add('defeated');
-        }
-        card.innerHTML = `
-            <img src="${boss.image}" alt="${boss.name}" class="boss-img-map" onerror="this.style.display='none'">
-            <h2>${boss.name}</h2>
-            <div>HP: ${boss.hp}, Урон: ${boss.damage}</div>
-            <div>${boss.description}</div>
-            <div>Требуемый уровень: ${boss.levelRequired}</div>
-            <button class="btn-fight" onclick="startBattle(${index})">СРАЗИТЬСЯ</button>
-        `;
-        bossList.appendChild(card);
+/* ============================================================
+   ИНИЦИАЛИЗАЦИЯ
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+    loadGame();
+    updateStats();
+    renderBosses();
+    renderShop();
+
+    // Слоты экипировки
+    document.querySelectorAll('.equip-slot').forEach(slot => {
+        slot.addEventListener('click', () => openEquipModal(slot.dataset.slot));
     });
-}
+
+    // Вкладки магазина
+    document.querySelectorAll('.shop-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            currentShopTab = tab.dataset.type;
+            renderShop();
+        });
+    });
+
+    // Закрытие модалки по клику на фон
+    document.getElementById('equip-modal').addEventListener('click', e => {
+        if (e.target.id === 'equip-modal') closeEquipModal();
+    });
+});
