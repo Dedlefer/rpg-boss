@@ -1,3 +1,9 @@
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+  console.log('TG user:', tg.initDataUnsafe?.user);
+}
 const hero = {
     level: 1,
     xp: 0,
