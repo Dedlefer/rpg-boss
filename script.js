@@ -1,18 +1,17 @@
 /* ============================================================
-   0. КОНСТАНТЫ
+   0. КОНСТАНТЫ И УТИЛИТЫ
    ============================================================ */
-const SAVE_VERSION = 3;
+const SAVE_VERSION = 4;
 const $ = id => document.getElementById(id);
 const getItem = id => items.find(i => i.id === id);
-const random = (min, max) => Math.random() * (max - min) + min;
 
 const SLOT_LABELS = {
-    weapon:'ОРУЖИЕ', helmet:'ШЛЕМ', chest:'НАГРУДНИК',
+    weapon:'ОРУЖИЕ', helmet:'ШЛЕМ', chest:'БРОНЯ',
     legs:'ПОНОЖИ', boots:'БОТИНКИ', shield:'ЩИТ'
 };
 
 /* ============================================================
-   1. ДАННЫЕ
+   1. ДАННЫЕ (Сеттинг: Мембрана 2087)
    ============================================================ */
 const hero = {
     level: 1, xp: 0, xpToNext: 5000, unspentPoints: 0, skillPoints: 0,
@@ -30,67 +29,92 @@ const hero = {
 };
 
 const bosses = [
-    { id:'boss-1', name:'Крыса-мутант', levelRequired:1, hp:500, damage:3, archetype:'tank',
-      reward:{xp:50,silver:50,gold:5}, image:'images/boss_rat.png',
-      description:'Грызун из подземелий.', intro:'*писк* — крыса оскалила клыки.' },
-    { id:'boss-2', name:'Гигантская паучиха', levelRequired:5, hp:1000, damage:6, archetype:'berserk',
-      reward:{xp:150,silver:150,gold:15}, image:'images/boss_spider.png',
-      description:'Плетёт сети.', intro:'Паучиха спускается с потолка.' },
-    { id:'boss-3', name:'Скелет-воин', levelRequired:10, hp:1500, damage:8, archetype:'tank',
-      reward:{xp:300,silver:300,gold:30}, image:'images/boss_skeleton.png',
-      description:'Восставший из мёртвых.', intro:'Кости скрипят, меч обнажён.' },
-    { id:'boss-4', name:'Гоблин-шаман', levelRequired:15, hp:2000, damage:10, archetype:'mage',
-      reward:{xp:500,silver:500,gold:50}, image:'images/boss_goblin.png',
-      description:'Колдует тёмную магию.', intro:'Шаман бормочет заклятье.' },
-    { id:'boss-5', name:'Орк-вождь', levelRequired:20, hp:2500, damage:12, archetype:'berserk',
-      reward:{xp:800,silver:800,gold:80}, image:'images/boss_orc.png',
-      description:'Громила с дубиной.', intro:'Орк ревёт и поднимает дубину.' },
-    { id:'boss-6', name:'Минотавр', levelRequired:25, hp:3000, damage:15, archetype:'tank',
-      reward:{xp:1200,silver:1200,gold:120}, image:'images/boss_minotaur.png',
-      description:'Охраняет лабиринт.', intro:'Топот копыт в темноте.' },
-    { id:'boss-7', name:'Древний дракон', levelRequired:30, hp:5000, damage:20, archetype:'mage',
-      reward:{xp:3000,silver:3000,gold:300}, image:'images/boss.png',
-      description:'Страж подземелья.', intro:'Дракон раскрывает крылья.' }
+    { id:'boss-1', name:'Споровик-разведчик', levelRequired:1, hp:500, damage:5, archetype:'mage',
+      reward:{xp:50,silver:50,gold:5}, image:'images/boss_spore.png',
+      description:'Ядовитый гриб из Нижнего Яруса.', intro:'Споровик выпускает облако спор.' },
+    { id:'boss-2', name:'Грибной матёрый', levelRequired:5, hp:1200, damage:8, archetype:'tank',
+      reward:{xp:150,silver:150,gold:15}, image:'images/boss_fungus.png',
+      description:'Притворяется мёртвым, пока не подойдёшь.', intro:'Куча гниющих листьев начинает шевелиться.' },
+    { id:'boss-3', name:'Жук-броненосец', levelRequired:10, hp:2000, damage:12, archetype:'tank',
+      reward:{xp:300,silver:300,gold:30}, image:'images/boss_beetle.png',
+      description:'Панцирь отражает 80% урона.', intro:'Лязг хитина эхом разносится по туннелю.' },
+    { id:'boss-4', name:'Слизень-металлоед', levelRequired:15, hp:3000, damage:15, archetype:'berserk',
+      reward:{xp:500,silver:500,gold:50}, image:'images/boss_slime.png',
+      description:'Пожирает металл и снаряжение.', intro:'Слизень переваривает чей-то экзоскелет.' },
+    { id:'boss-5', name:'Мать-паучиха', levelRequired:20, hp:4000, damage:18, archetype:'berserk',
+      reward:{xp:800,silver:800,gold:80}, image:'images/boss_spider.png',
+      description:'Спавнит паучат, неуязвима, пока они живы.', intro:'Из темноты доносится шорох тысяч лап.' },
+    { id:'boss-6', name:'Небоскрёб-улей', levelRequired:25, hp:6000, damage:22, archetype:'mage',
+      reward:{xp:1200,silver:1200,gold:120}, image:'images/boss_hive.png',
+      description:'Здание, проросшее грибницей.', intro:'Огромная тень накрывает сектор.' },
+    { id:'boss-7', name:'Заражённый Титан', levelRequired:30, hp:10000, damage:30, archetype:'tank',
+      reward:{xp:3000,silver:3000,gold:300}, image:'images/boss_infected.png',
+      description:'Полубосс-катастрофа. Смывает всё на пути.', intro:'Земля дрожит. Приближается гигант.' },
+    { id:'boss-8', name:'Титан-слизень', levelRequired:35, hp:15000, damage:45, archetype:'berserk',
+      reward:{xp:5000,silver:5000,gold:500}, image:'images/boss_titan.png',
+      description:'Слизистая гора, поглощающая свет.', intro:'Прилив слизи накрывает арену.' },
 ];
 
 const items = [
-    { id:'item-1',  name:'Деревянная дубинка', type:'weapon', damageBonus:30,  price:{silver:1500,gold:300},  rarity:'common',    image:'images/weapon_wooden_club.jpg' },
-    { id:'item-2',  name:'Железный меч',       type:'weapon', damageBonus:50,  price:{silver:3000,gold:600},  rarity:'common',    image:'images/weapon_iron_sword.jpg' },
-    { id:'item-3',  name:'Каменный меч',       type:'weapon', damageBonus:70,  price:{silver:5000,gold:1000}, rarity:'rare',      image:'images/weapon_stone_sword.jpg' },
-    { id:'item-4',  name:'Золотой меч',        type:'weapon', damageBonus:100, price:{silver:10000,gold:2000},rarity:'legendary', image:'images/weapon_golden_sword.jpg' },
-    { id:'item-5',  name:'Копьё',              type:'weapon', damageBonus:40,  price:{silver:2000,gold:400},  rarity:'common',    image:'images/weapon_spear.jpg' },
-    { id:'item-6',  name:'Кинжал',             type:'weapon', damageBonus:20, critChanceBonus:5, price:{silver:2500,gold:500}, rarity:'rare', image:'images/weapon_dagger.jpg' },
-    { id:'item-7',  name:'Кожаный шлем',       type:'helmet', hpBonus:30,  price:{silver:1500,gold:300},  rarity:'common', image:'images/armor_leather_helmet.png' },
-    { id:'item-8',  name:'Железный шлем',      type:'helmet', hpBonus:60,  price:{silver:3000,gold:600},  rarity:'rare',   image:'images/armor_iron_helmet.png' },
-    { id:'item-9',  name:'Кожаный нагрудник',  type:'chest',  hpBonus:50,  price:{silver:2500,gold:500},  rarity:'common', image:'images/armor_leather_chest.png' },
-    { id:'item-10', name:'Железный нагрудник', type:'chest',  hpBonus:100, price:{silver:5000,gold:1000}, rarity:'rare',   image:'images/armor_iron_chest.png' },
-    { id:'item-11', name:'Железные поножи',    type:'legs',   hpBonus:25,  price:{silver:1200,gold:240},  rarity:'common', image:'images/armor_iron_legs.png' },
-    { id:'item-12', name:'Кожаные ботинки',    type:'boots',  evadeBonus:2, price:{silver:1000,gold:200}, rarity:'common', image:'images/armor_leather_boots.png' },
-    { id:'item-13', name:'Деревянный щит',     type:'shield', hpBonus:20, evadeBonus:1, price:{silver:1800,gold:360}, rarity:'common', image:'images/armor_wooden_shield.png' },
-    { id:'item-14', name:'Железный щит',       type:'shield', hpBonus:50, evadeBonus:3, price:{silver:4000,gold:800}, rarity:'rare',   image:'images/armor_iron_shield.png' }
+    // ================= ОРУЖИЕ (weapon) =================
+    { id:'w1', name:'Ржавый тесак', type:'weapon', damageBonus:15, price:{silver:800,gold:0}, rarity:'common', image:'images/w_rusty.png' },
+    { id:'w2', name:'Шокер-резак', type:'weapon', damageBonus:30, price:{silver:1500,gold:300}, rarity:'common', image:'images/w_shocker.png' },
+    { id:'w3', name:'Игломёт', type:'weapon', damageBonus:40, critChanceBonus:3, price:{silver:2500,gold:500}, rarity:'rare', image:'images/w_needler.png' },
+    { id:'w4', name:'Плазменный тесак', type:'weapon', damageBonus:60, price:{silver:5000,gold:1000}, rarity:'rare', image:'images/w_plasma.png' },
+    { id:'w5', name:'Симбиотический хлыст', type:'weapon', damageBonus:75, critChanceBonus:5, price:{silver:7500,gold:1500}, rarity:'epic', image:'images/w_whip.png' },
+    { id:'w6', name:'Кислотный распылитель', type:'weapon', damageBonus:85, price:{silver:10000,gold:2000}, rarity:'epic', image:'images/w_acid.png' },
+    { id:'w7', name:'Рельсотрон', type:'weapon', damageBonus:120, critChanceBonus:10, price:{silver:25000,gold:5000}, rarity:'legendary', image:'images/w_rail.png' },
+
+    // ================= ШЛЕМЫ (helmet) =================
+    { id:'h1', name:'Тканевая маска', type:'helmet', hpBonus:15, price:{silver:500,gold:0}, rarity:'common', image:'images/h_cloth.png' },
+    { id:'h2', name:'Фильтр-маска', type:'helmet', hpBonus:30, price:{silver:1500,gold:300}, rarity:'common', image:'images/h_filter.png' },
+    { id:'h3', name:'Шлем "Хитин"', type:'helmet', hpBonus:50, evadeBonus:2, price:{silver:3500,gold:700}, rarity:'rare', image:'images/h_chitin.png' },
+    { id:'h4', name:'Тактический визор', type:'helmet', hpBonus:70, critChanceBonus:3, price:{silver:6000,gold:1200}, rarity:'rare', image:'images/h_visor.png' },
+    { id:'h5', name:'Шлем "Грибница"', type:'helmet', hpBonus:120, evadeBonus:5, price:{silver:15000,gold:3000}, rarity:'epic', image:'images/h_fungus.png' },
+
+    // ================= БРОНЯ (chest) =================
+    { id:'c1', name:'Кевларовый жилет', type:'chest', hpBonus:40, price:{silver:2000,gold:400}, rarity:'common', image:'images/c_kevlar.png' },
+    { id:'c2', name:'Кольчуга из чешуи', type:'chest', hpBonus:70, evadeBonus:2, price:{silver:4000,gold:800}, rarity:'rare', image:'images/c_scales.png' },
+    { id:'c3', name:'Симбиотическая броня', type:'chest', hpBonus:100, price:{silver:6000,gold:1200}, rarity:'rare', image:'images/c_symbiont.png' },
+    { id:'c4', name:'Броня "Мембрана"', type:'chest', hpBonus:150, price:{silver:12000,gold:2400}, rarity:'epic', image:'images/c_membrane.png' },
+    { id:'c5', name:'Экзоскелет "Титан"', type:'chest', hpBonus:250, price:{silver:30000,gold:6000}, rarity:'legendary', image:'images/c_titan.png' },
+
+    // ================= ПОНОЖИ (legs) =================
+    { id:'l1', name:'Штаны выжившего', type:'legs', hpBonus:20, price:{silver:1000,gold:200}, rarity:'common', image:'images/l_survivor.png' },
+    { id:'l2', name:'Поножи "Броненосец"', type:'legs', hpBonus:45, price:{silver:3000,gold:600}, rarity:'rare', image:'images/l_beetle.png' },
+    { id:'l3', name:'Механические протезы', type:'legs', hpBonus:80, evadeBonus:2, price:{silver:8000,gold:1600}, rarity:'epic', image:'images/l_mech.png' },
+
+    // ================= БОТИНКИ (boots) =================
+    { id:'b1', name:'Тканевые обмотки', type:'boots', evadeBonus:1, price:{silver:500,gold:0}, rarity:'common', image:'images/b_wraps.png' },
+    { id:'b2', name:'Ботинки-присоски', type:'boots', evadeBonus:3, price:{silver:2000,gold:400}, rarity:'common', image:'images/b_suction.png' },
+    { id:'b3', name:'Прыжковые ботинки', type:'boots', evadeBonus:6, price:{silver:6000,gold:1200}, rarity:'rare', image:'images/b_jump.png' },
+
+    // ================= ЩИТЫ (shield) =================
+    { id:'s1', name:'Барьер-пластина', type:'shield', hpBonus:30, evadeBonus:1, price:{silver:1500,gold:300}, rarity:'common', image:'images/s_barrier.png' },
+    { id:'s2', name:'Панцирь черепахи', type:'shield', hpBonus:60, evadeBonus:1, price:{silver:3500,gold:700}, rarity:'rare', image:'images/s_shell.png' },
+    { id:'s3', name:'Энергощит', type:'shield', hpBonus:100, evadeBonus:5, price:{silver:10000,gold:2000}, rarity:'epic', image:'images/s_energy.png' },
 ];
 
+// ВНИМАНИЕ: Здесь был дубликат, я его удалил. Теперь массив один.
 const consumables = [
-    { id:'potion-small',  name:'Малое зелье',   key:'potion_small',  heal:0.3, price:{silver:300},  image:'images/potion_red.png' },
-    { id:'potion-big',    name:'Большое зелье', key:'potion_big',    heal:0.7, price:{silver:1000}, image:'images/potion_blue.png' },
-    { id:'elixir-strength', name:'Эликсир силы', key:'elixir',       buff:0.5, price:{silver:1500}, image:'images/potion_green.png' }
+    { id:'potion-small', name:'Антидот', key:'potion_small', heal:0.3, price:{silver:300}, image:'images/potion_green.png' },
+    { id:'potion-big', name:'Стимулятор', key:'potion_big', heal:0.7, price:{silver:1000}, image:'images/potion_red.png' },
+    { id:'potion-stim', name:'Стим-пак', key:'potion_stim', heal:1.0, price:{silver:2500}, image:'images/potion_blue.png' }
 ];
 
 const skills = [
-    { id:'rage',      name:'Ярость',       desc:'+15% урона при HP < 30%',            cost:3 },
-    { id:'vampire',   name:'Вампиризм',    desc:'5% нанесённого урона возвращается в HP', cost:4 },
-    { id:'thick_skin',name:'Толстая кожа', desc:'+20% максимального HP',              cost:3 },
-    { id:'double_hit',name:'Двойной удар', desc:'15% шанс ударить дважды',            cost:5 },
-    { id:'parry',     name:'Парирование',  desc:'10% шанс отразить удар',             cost:4 }
+    { id:'rage', name:'Ярость', desc:'+15% урона при HP < 30%', cost:3 },
+    { id:'vampire', name:'Симбиоз', desc:'5% урона возвращается в HP', cost:4 },
+    { id:'thick_skin', name:'Хитиновая кожа', desc:'+20% максимального HP', cost:3 },
+    { id:'double_hit', name:'Двойной разряд', desc:'15% шанс ударить дважды', cost:5 },
+    { id:'parry', name:'Энергоблок', desc:'10% шанс отразить удар', cost:4 }
 ];
 
 const achievements = [
-    { id:'first_blood', name:'Первая кровь',  desc:'Убей первого босса',        reward:{silver:200},   check:() => defeatedBosses.length >= 1 },
-    { id:'collector',   name:'Коллекционер',  desc:'Надень 3 предмета',         reward:{diamonds:1},   check:() => hero.equipment.length >= 3 },
-    { id:'dragon_slayer', name:'Драконоборец',desc:'Убей Древнего дракона',     reward:{diamonds:5},   check:() => defeatedBosses.includes('boss-7') },
-    { id:'rich',        name:'Толстосум',     desc:'Накопи 10 000 серебра',     reward:{diamonds:2},   check:() => hero.silver >= 10000 },
-    { id:'tower_10',    name:'Покоритель',    desc:'Дойди до 10 этажа башни',   reward:{diamonds:3},   check:() => hero.towerRecord >= 10 },
-    { id:'crit_lord',   name:'Критический',   desc:'Собери 50% шанс крита',     reward:{silver:5000},  check:() => calcStats().critChance >= 50 }
+    { id:'first_blood', name:'Первая зачистка', desc:'Убей первого босса', reward:{silver:200}, check:() => defeatedBosses.length >= 1 },
+    { id:'collector', name:'Экипирован', desc:'Надень 3 предмета', reward:{diamonds:1}, check:() => hero.equipment.length >= 3 },
+    { id:'titan_slayer', name:'Убийца титанов', desc:'Убей Титана-слизня', reward:{diamonds:5}, check:() => defeatedBosses.includes('boss-8') },
+    { id:'rich', name:'Кредитный рейтинг', desc:'Накопи 10 000 серебра', reward:{diamonds:2}, check:() => hero.silver >= 10000 }
 ];
 
 /* ============================================================
@@ -107,9 +131,7 @@ let autoBattle = false;
 let autoTimer = null;
 let battleSpeed = 1;
 let potionCountInBattle = 3;
-let strengthBuff = 0;
 let towerMode = false;
-let dailyBoss = null;
 
 /* ============================================================
    3. ЗВУК (Web Audio)
@@ -123,26 +145,30 @@ function playSound(type) {
         osc.connect(gain); gain.connect(audioCtx.destination);
         const now = audioCtx.currentTime;
         if (type === 'hit') {
-            osc.frequency.setValueAtTime(220, now);
-            osc.frequency.exponentialRampToValueAtTime(80, now + 0.15);
-            gain.gain.setValueAtTime(0.15, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-            osc.start(now); osc.stop(now + 0.15);
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            osc.start(now); osc.stop(now + 0.1);
         } else if (type === 'crit') {
-            osc.frequency.setValueAtTime(440, now);
-            osc.frequency.exponentialRampToValueAtTime(120, now + 0.25);
-            gain.gain.setValueAtTime(0.2, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-            osc.start(now); osc.stop(now + 0.25);
-        } else if (type === 'heal') {
-            osc.frequency.setValueAtTime(660, now);
-            osc.frequency.exponentialRampToValueAtTime(880, now + 0.2);
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(400, now);
+            osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
             gain.gain.setValueAtTime(0.15, now);
             gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
             osc.start(now); osc.stop(now + 0.2);
+        } else if (type === 'heal') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, now);
+            osc.frequency.exponentialRampToValueAtTime(800, now + 0.2);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+            osc.start(now); osc.stop(now + 0.2);
         } else if (type === 'click') {
-            osc.frequency.setValueAtTime(880, now);
-            gain.gain.setValueAtTime(0.08, now);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, now);
+            gain.gain.setValueAtTime(0.05, now);
             gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
             osc.start(now); osc.stop(now + 0.05);
         }
@@ -154,10 +180,10 @@ function playSound(type) {
    ============================================================ */
 function itemBonusText(item) {
     const p = [];
-    if (item.damageBonus) p.push(`+${item.damageBonus} урона`);
+    if (item.damageBonus) p.push(`+${item.damageBonus} УРН`);
     if (item.hpBonus) p.push(`+${item.hpBonus} HP`);
-    if (item.evadeBonus) p.push(`+${item.evadeBonus}% уклонение`);
-    if (item.critChanceBonus) p.push(`+${item.critChanceBonus}% крит`);
+    if (item.evadeBonus) p.push(`+${item.evadeBonus}% УКЛ`);
+    if (item.critChanceBonus) p.push(`+${item.critChanceBonus}% КРИТ`);
     return p.length ? p.join(', ') : '—';
 }
 
@@ -166,12 +192,11 @@ function rarityColor(r) {
 }
 
 function todayStr() { return new Date().toISOString().slice(0,10); }
-
 function openModal(id) { $(id).classList.remove('hidden'); }
 function closeModal(id) { $(id).classList.add('hidden'); }
 
 /* ============================================================
-   5. ЭКРАНЫ
+   5. ЭКРАНЫ И СТАТЫ
    ============================================================ */
 function goToScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -184,17 +209,14 @@ function goToScreen(id) {
     if (id === 'achievements-screen') renderAchievements();
 }
 
-/* ============================================================
-   6. СТАТЫ
-   ============================================================ */
 function calcStats() {
-    let hpMul = 1, dmgMul = 1;
+    let hpMul = 1;
     if (hero.skills.includes('thick_skin')) hpMul *= 1.2;
 
     const base = {
         hp: (200 + hero.sta * 20) * hpMul,
         maxHp: (200 + hero.sta * 20) * hpMul,
-        damage: (100 + hero.str * 10) * dmgMul,
+        damage: 100 + hero.str * 10,
         critChance: Math.min(hero.agi * 0.5, 100),
         critDamage: 100 + hero.agi,
         evade: Math.min(hero.agi * 0.2, 100)
@@ -207,11 +229,10 @@ function calcStats() {
         if (it.evadeBonus) bonus.evade += it.evadeBonus;
         if (it.critChanceBonus) bonus.critChance += it.critChanceBonus;
     });
-    let petBonus = hero.pet ? 1.05 : 1;
     return {
         hp: base.hp + bonus.hp,
         maxHp: base.maxHp + bonus.hp,
-        damage: (base.damage + bonus.damage) * petBonus,
+        damage: base.damage + bonus.damage,
         critChance: Math.min(base.critChance + bonus.critChance, 100),
         critDamage: base.critDamage,
         evade: Math.min(base.evade + bonus.evade, 100)
@@ -229,21 +250,21 @@ function updateStats() {
     if (hero.hp > hero.maxHp || !hero.hp) hero.hp = hero.maxHp;
     else if (oldMax !== hero.maxHp) hero.hp = Math.min(hero.hp, hero.maxHp);
 
+    // Обновление HUD
     $('hero-level').textContent = hero.level;
+    $('left-hero-level').textContent = hero.level;
     $('hero-xp').textContent = hero.xp;
     $('hero-xp-to-next').textContent = hero.xpToNext;
     $('hero-xp-bar').style.width = (hero.xp / hero.xpToNext * 100) + '%';
-    $('hero-unspent-points').textContent = hero.unspentPoints;
-    $('hero-hp').textContent = hero.maxHp.toFixed(1);
-    $('hero-damage').textContent = hero.damage.toFixed(1);
-    $('hero-crit-chance').textContent = hero.critChance.toFixed(1) + '%';
-    $('hero-crit-damage').textContent = hero.critDamage.toFixed(1) + '%';
-    $('hero-evade').textContent = hero.evade.toFixed(1) + '%';
+    $('hero-hp').textContent = hero.maxHp.toFixed(0);
+    $('hero-damage').textContent = hero.damage.toFixed(0);
+    
     $('hero-silver').textContent = hero.silver;
     $('hero-gold').textContent = hero.gold;
     $('hero-diamonds').textContent = hero.diamonds;
     $('hero-keys').textContent = hero.keys;
-    $('hero-pet').textContent = hero.pet ? 'Кот-спутник (+5% урона)' : 'Нет';
+    
+    $('hero-unspent-points').textContent = hero.unspentPoints;
     $('str').textContent = hero.str;
     $('agi').textContent = hero.agi;
     $('sta').textContent = hero.sta;
@@ -271,7 +292,7 @@ function rerollStats() {
 }
 
 /* ============================================================
-   7. ЭКИПИРОВКА
+   6. ЭКИПИРОВКА
    ============================================================ */
 function equippedIdInSlot(type) {
     return hero.equipment.find(id => {
@@ -288,14 +309,15 @@ function renderEquipment() {
             const it = getItem(id);
             slot.classList.remove('empty');
             slot.style.borderColor = rarityColor(it.rarity);
-            slot.innerHTML = `
-                <img src="${it.image}" class="equip-img" onerror="this.style.display='none'">
-                <div class="slot-name">${it.name}</div>
-                <div class="slot-bonus">${itemBonusText(it)}</div>`;
+            slot.style.backgroundImage = `url('${it.image}')`;
+            slot.innerHTML = `<div class="slot-bonus">${itemBonusText(it)}</div>`;
+            slot.title = it.name;
         } else {
             slot.classList.add('empty');
             slot.style.borderColor = '#444';
-            slot.textContent = SLOT_LABELS[type] || type.toUpperCase();
+            slot.style.backgroundImage = 'none';
+            slot.innerHTML = '';
+            slot.title = SLOT_LABELS[type];
         }
     });
 }
@@ -329,7 +351,7 @@ function renderModalItems(type) {
     });
     if (!equippedId && available.length === 0) {
         const d = document.createElement('div');
-        d.textContent = 'Нет предметов этого типа';
+        d.textContent = 'Нет предметов';
         d.style.color = '#bbb';
         box.appendChild(d);
         return;
@@ -374,24 +396,20 @@ function unequipItem(type) {
 }
 
 /* ============================================================
-   8. МАГАЗИН
+   7. МАГАЗИН
    ============================================================ */
-function todaysDeal() {
-    const day = new Date().getDate();
-    return items[day % items.length];
-}
+function todaysDeal() { return items[new Date().getDate() % items.length]; }
 
 function renderShop() {
     document.querySelectorAll('.shop-tab').forEach(t =>
         t.classList.toggle('active', t.dataset.type === currentShopTab)
     );
-    // Товар дня
     const dd = $('daily-deal');
     const deal = todaysDeal();
     dd.innerHTML = `
         <div class="deal-card">
             <b>ТОВАР ДНЯ:</b> ${deal.name} <span style="color:var(--gold)">−30%</span>
-            <button onclick="buyItem('${deal.id}', true)">КУПИТЬ СО СКИДКОЙ</button>
+            <button onclick="buyItem('${deal.id}', true)">КУПИТЬ</button>
         </div>`;
 
     const grid = $('shop-grid');
@@ -405,7 +423,7 @@ function renderShop() {
             d.innerHTML = `
                 <img src="${c.image}" class="item-img" onerror="this.style.display='none'">
                 <h3>${c.name}</h3>
-                <p>${c.heal ? 'Восст. ' + (c.heal*100) + '% HP' : 'Бафф урона ' + (c.buff*100) + '%'}</p>
+                <p>${c.heal ? 'Восст. ' + (c.heal*100) + '% HP' : ''}</p>
                 <div class="price"><img src="images/coin_silver.png" class="price-icon" onerror="this.style.display='none'">${c.price.silver}</div>
                 <p class="owned-label">В наличии: ${owned}</p>
                 <button onclick="buyConsumable('${c.key}', ${c.price.silver})">КУПИТЬ</button>`;
@@ -429,7 +447,7 @@ function renderShop() {
                 <img src="images/coin_gold.png" class="price-icon" onerror="this.style.display='none'">${item.price.gold}
             </div>
             ${owned
-                ? `<div class="owned-label">${equipped ? 'НАДЕТО' : 'В ИНВЕНТАРЕ'}</div>`
+                ? `<div class="owned-label">${equipped ? 'НАДЕТО' : 'В СУМКЕ'}</div>`
                 : `<button onclick="buyItem('${item.id}')">КУПИТЬ</button>`}`;
         grid.appendChild(d);
     });
@@ -458,7 +476,7 @@ function buyConsumable(key, price) {
 }
 
 /* ============================================================
-   9. ИНВЕНТАРЬ
+   8. ИНВЕНТАРЬ
    ============================================================ */
 function renderInventory() {
     document.querySelectorAll('.inv-tab').forEach(t =>
@@ -482,7 +500,7 @@ function renderInventory() {
                 <p class="item-type">${SLOT_LABELS[it.type]}</p>
                 <p>${itemBonusText(it)}</p>
                 <button onclick="equipItem('${it.id}')">НАДЕТЬ</button>
-                <button class="sell-btn" onclick="sellItem('${it.id}')">ПРОДАТЬ (${Math.floor(it.price.silver*0.5)})</button>`;
+                <button class="sell-btn" onclick="sellItem('${it.id}')">ПРОДАТЬ</button>`;
             grid.appendChild(d);
         });
     } else if (currentInvTab === 'consumable') {
@@ -506,8 +524,8 @@ function renderInventory() {
         d.innerHTML = `
             <img src="images/key.png" class="item-img" onerror="this.style.display='none'">
             <h3>Ключи: ${hero.keys}</h3>
-            <p>3 ключа = 1 случайный предмет</p>
-            <button onclick="openChest()" ${hero.keys < 3 ? 'disabled' : ''}>ОТКРЫТЬ СУНДУК</button>`;
+            <p>3 ключа = 1 предмет</p>
+            <button onclick="openChest()" ${hero.keys < 3 ? 'disabled' : ''}>ОТКРЫТЬ</button>`;
         grid.appendChild(d);
     }
 }
@@ -526,7 +544,7 @@ function openChest() {
     if (hero.keys < 3) return;
     hero.keys -= 3;
     const pool = items.filter(i => !hero.inventory.includes(i.id) && !hero.equipment.includes(i.id));
-    if (pool.length === 0) { alert('Все предметы уже собраны!'); hero.keys += 3; return; }
+    if (pool.length === 0) { alert('Все предметы собраны!'); hero.keys += 3; return; }
     const reward = pool[Math.floor(Math.random() * pool.length)];
     hero.inventory.push(reward.id);
     alert(`Из сундука выпал: ${reward.name}!`);
@@ -535,7 +553,7 @@ function openChest() {
 }
 
 /* ============================================================
-   10. НАВЫКИ
+   9. НАВЫКИ / ДОСТИЖЕНИЯ
    ============================================================ */
 function renderSkills() {
     const grid = $('skills-grid');
@@ -547,7 +565,7 @@ function renderSkills() {
         d.innerHTML = `
             <h3>${sk.name}</h3>
             <p>${sk.desc}</p>
-            <p class="skill-cost">${learned ? 'ИЗУЧЕНО' : 'Стоимость: ' + sk.cost + ' очков'}</p>
+            <p class="skill-cost">${learned ? 'ИЗУЧЕНО' : 'Цена: ' + sk.cost}</p>
             ${learned ? '' : `<button onclick="learnSkill('${sk.id}')" ${hero.skillPoints < sk.cost ? 'disabled' : ''}>ИЗУЧИТЬ</button>`}`;
         grid.appendChild(d);
     });
@@ -563,62 +581,91 @@ function learnSkill(id) {
     renderSkills();
 }
 
+function checkAchievements() {
+    achievements.forEach(a => {
+        if (hero.achievements.includes(a.id)) return;
+        try {
+            if (a.check()) {
+                hero.achievements.push(a.id);
+                if (a.reward.silver) hero.silver += a.reward.silver;
+                if (a.reward.diamonds) hero.diamonds += a.reward.diamonds;
+                setTimeout(() => alert(`Достижение: ${a.name}!`), 100);
+            }
+        } catch (e) {}
+    });
+}
+
+function renderAchievements() {
+    const grid = $('ach-grid');
+    grid.innerHTML = '';
+    achievements.forEach(a => {
+        const unlocked = hero.achievements.includes(a.id);
+        const d = document.createElement('div');
+        d.className = 'ach-card' + (unlocked ? ' unlocked' : '');
+        d.innerHTML = `
+            <h3>${a.name}</h3>
+            <p>${a.desc}</p>
+            <p class="ach-reward">${a.reward.silver ? '+' + a.reward.silver + ' серебра' : ''}${a.reward.diamonds ? '+' + a.reward.diamonds + ' 💎' : ''}</p>
+            <p>${unlocked ? 'ПОЛУЧЕНО' : 'НЕ ПОЛУЧЕНО'}</p>`;
+        grid.appendChild(d);
+    });
+}
+
 /* ============================================================
-   11. КАРТА
+   10. КАРТА
    ============================================================ */
 function renderBosses() {
     const list = $('boss-list');
     list.innerHTML = '';
 
-    // Ежедневный босс
     const daily = $('daily-boss-banner');
     const claimedToday = hero.dailyClaimedDate === todayStr();
-    if (dailyBoss && !claimedToday) {
+    if (!claimedToday) {
         daily.innerHTML = `
             <div class="daily-banner">
-                <b>ЗОЛОТОЙ ДРАКОН</b> — ×3 награда! Осталось на сегодня.
+                <b>АНОМАЛИЯ ДНЯ</b> — ×3 награда!
                 <button onclick="startDailyBattle()">СРАЗИТЬСЯ</button>
             </div>`;
     } else {
-        daily.innerHTML = '<div class="daily-banner claimed">Золотой дракон уже повержен сегодня. Возвращайся завтра!</div>';
+        daily.innerHTML = '<div class="daily-banner claimed">Аномалия уже зачищена. Жди завтра.</div>';
     }
 
     bosses.forEach((boss, index) => {
         const locked = hero.level < boss.levelRequired;
         const defeated = defeatedBosses.includes(boss.id);
         const row = document.createElement('div');
-        row.className = 'boss-row' + (locked ? ' locked' : '') + (defeated ? ' defeated' : '');
+        row.className = 'boss-node' + (locked ? ' locked' : '') + (defeated ? ' defeated' : '');
+        
+        // Позиционирование на карте (примерное, для визуала)
+        row.style.left = (15 + (index % 3) * 30) + '%';
+        row.style.top = (20 + Math.floor(index / 3) * 35) + '%';
+
         row.innerHTML = `
-            <img src="${boss.image}" class="boss-thumb" onerror="this.style.display='none'">
-            <div class="boss-info">
+            <div class="node-marker">
+                <img src="${boss.image}" class="boss-thumb" onerror="this.style.display='none'">
+            </div>
+            <div class="node-info">
                 <h3>${boss.name}</h3>
-                <p class="boss-desc">${boss.description}</p>
-                <p>HP: ${boss.hp} · Урон: ${boss.damage} · Тип: ${boss.archetype}</p>
+                <p>УР. ${boss.levelRequired}</p>
             </div>
-            <div class="boss-status">
-                ${defeated ? '<span class="badge defeated-badge">ПОВЕРЖЕН</span>' : ''}
-                ${locked ? '<span class="badge locked-badge">ЗАКРЫТ</span>' : ''}
-            </div>
-            <button class="btn-fight" ${locked ? 'disabled' : ''} onclick="startBattle(${index})">СРАЗИТЬСЯ</button>`;
+            ${locked ? '<span class="badge locked-badge">🔒</span>' : 
+              defeated ? '<span class="badge defeated-badge">✔</span>' : 
+              `<button class="btn-fight" onclick="startBattle(${index})">БОЙ</button>`}
+        `;
         list.appendChild(row);
     });
 }
 
 /* ============================================================
-   12. БАШНЯ
+   11. БАШНЯ
    ============================================================ */
 function currentTowerBoss() {
     const floor = hero.towerFloor;
     return {
-        id: 'tower-' + floor,
-        name: 'Страж этажа ' + floor,
-        hp: 500 + floor * 400,
-        damage: 3 + floor * 2,
-        archetype: ['tank','berserk','mage'][floor % 3],
+        id: 'tower-' + floor, name: 'Страж ' + floor,
+        hp: 500 + floor * 400, damage: 3 + floor * 2, archetype: ['tank','berserk','mage'][floor % 3],
         reward: { xp: 100 * floor, silver: 100 * floor, gold: floor * 5 },
-        image: 'images/boss.png',
-        description: 'Бесконечная башня.',
-        intro: 'Страж этажа ' + floor + ' преграждает путь.'
+        image: 'images/boss_hive.png', description: 'Бесконечная башня.', intro: 'Страж этажа преграждает путь.'
     };
 }
 
@@ -630,12 +677,11 @@ function renderTower() {
 
 function startTowerBattle() {
     towerMode = true;
-    const b = currentTowerBoss();
-    beginBattle(b);
+    beginBattle(currentTowerBoss());
 }
 
 /* ============================================================
-   13. БОЙ
+   12. БОЙ
    ============================================================ */
 function beginBattle(boss) {
     currentBoss = boss;
@@ -643,17 +689,16 @@ function beginBattle(boss) {
     bossHp = boss.hp;
     hero.hp = hero.maxHp;
     defending = false;
-    strengthBuff = 0;
     battleActive = true;
     potionCountInBattle = 3;
 
-    $('hero-battle-hp').textContent = hero.hp.toFixed(1);
-    $('hero-battle-max-hp').textContent = hero.maxHp.toFixed(1);
+    $('hero-battle-hp').textContent = hero.hp.toFixed(0);
+    $('hero-battle-max-hp').textContent = hero.maxHp.toFixed(0);
     $('hero-hp-bar').style.width = '100%';
     $('boss-name-battle').textContent = boss.name;
     $('boss-img-battle').src = boss.image;
-    $('boss-battle-hp').textContent = bossHp.toFixed(1);
-    $('boss-battle-max-hp').textContent = bossMaxHp.toFixed(1);
+    $('boss-battle-hp').textContent = bossHp.toFixed(0);
+    $('boss-battle-max-hp').textContent = bossMaxHp.toFixed(0);
     $('boss-hp-bar').style.width = '100%';
     $('battle-log').innerHTML = '';
     $('potion-count').textContent = potionCountInBattle;
@@ -668,22 +713,16 @@ function startBattle(index) {
     const boss = bosses[index];
     if (!boss || hero.level < boss.levelRequired) return;
     towerMode = false;
-    beginBattle({ ...boss, hp: boss.hp, baseIndex: index });
+    beginBattle({ ...boss, baseIndex: index });
 }
 
 function startDailyBattle() {
-    const b = {
-        id: 'daily-dragon',
-        name: 'Золотой дракон',
-        hp: 4000, damage: 18, archetype: 'mage',
-        reward: { xp: 2000, silver: 2000, gold: 200 },
-        image: 'images/boss.png',
-        description: 'Ежедневный босс.',
-        intro: 'Золотой дракон сверкает чешуёй.',
-        dailyMultiplier: 3
-    };
+    beginBattle({
+        id: 'daily', name: 'Заражённый Титан', hp: 4000, damage: 18, archetype: 'mage',
+        reward: { xp: 2000, silver: 2000, gold: 200 }, image: 'images/boss_infected.png',
+        intro: 'Гигантская туша перекрывает проход.', dailyMultiplier: 3
+    });
     towerMode = false;
-    beginBattle(b);
 }
 
 function addBattleLog(html) {
@@ -712,12 +751,7 @@ function playerAction(action) {
     }
     else if (action === 'potion') {
         if (potionCountInBattle <= 0) return;
-        if ((hero.consumables.potion_small || 0) > 0) {
-            hero.consumables.potion_small--;
-            hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * 0.3);
-        } else {
-            hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * 0.2);
-        }
+        hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * 0.3);
         potionCountInBattle--;
         $('potion-count').textContent = potionCountInBattle;
         updateBattleBars();
@@ -729,32 +763,28 @@ function playerAction(action) {
 
 function doAttack(multiplier, label) {
     let dmg = hero.damage * multiplier;
-    if (strengthBuff) dmg *= (1 + strengthBuff);
     if (hero.skills.includes('rage') && hero.hp < hero.maxHp * 0.3) dmg *= 1.15;
 
     const isCrit = Math.random() * 100 < hero.critChance;
     if (isCrit) {
         dmg *= (2 + hero.critDamage / 100);
-        addBattleLog(`<span class="crit">${label}! КРИТ ${dmg.toFixed(1)}</span>`);
+        addBattleLog(`<span class="crit">${label}! КРИТ ${dmg.toFixed(0)}</span>`);
         playSound('crit');
     } else {
-        addBattleLog(`${label}: ${dmg.toFixed(1)} урона`);
+        addBattleLog(`${label}: ${dmg.toFixed(0)} урона`);
         playSound('hit');
     }
     showDamagePopup(dmg.toFixed(0), isCrit);
 
-    // Двойной удар
     if (hero.skills.includes('double_hit') && Math.random() < 0.15) {
         const extra = dmg * 0.7;
-        addBattleLog(`<span class="crit">Двойной удар! +${extra.toFixed(1)}</span>`);
+        addBattleLog(`<span class="crit">Двойной удар! +${extra.toFixed(0)}</span>`);
         dmg += extra;
     }
-
-    // Вампиризм
     if (hero.skills.includes('vampire')) {
         const heal = dmg * 0.05;
         hero.hp = Math.min(hero.maxHp, hero.hp + heal);
-        addBattleLog(`<span class="win">Вампиризм: +${heal.toFixed(1)} HP</span>`);
+        addBattleLog(`<span class="win">Симбиоз: +${heal.toFixed(0)} HP</span>`);
     }
 
     bossHp = Math.max(0, bossHp - dmg);
@@ -768,24 +798,21 @@ function doAttack(multiplier, label) {
 function bossTurn() {
     if (!currentBoss || bossHp <= 0) return;
 
-    // Фаза ярости
     if (bossHp < bossMaxHp * 0.5 && !currentBoss.enraged) {
         currentBoss.enraged = true;
-        addBattleLog('<span class="crit">БОСС В ЯРОСТИ! +50% урона</span>');
+        addBattleLog('<span class="crit">БОСС В ЯРОСТИ!</span>');
     }
 
     let bossDmg = currentBoss.damage;
     if (currentBoss.enraged) bossDmg *= 1.5;
 
-    // Маг игнорирует часть уклонения
     const evadeChance = currentBoss.archetype === 'mage' ? hero.evade * 0.5 : hero.evade;
     if (Math.random() * 100 < evadeChance) {
         addBattleLog('<span class="win">Уклонение!</span>');
         return;
     }
-    // Парирование
     if (hero.skills.includes('parry') && Math.random() < 0.1) {
-        addBattleLog('<span class="win">ПАРИРОВАНИЕ! Удар отражён.</span>');
+        addBattleLog('<span class="win">ПАРИРОВАНИЕ!</span>');
         const reflect = bossDmg * 0.5;
         bossHp = Math.max(0, bossHp - reflect);
         updateBattleBars();
@@ -801,15 +828,15 @@ function bossTurn() {
 
     hero.hp = Math.max(0, hero.hp - bossDmg);
     updateBattleBars();
-    addBattleLog(`${currentBoss.name} наносит ${bossDmg.toFixed(1)}`);
+    addBattleLog(`${currentBoss.name} наносит ${bossDmg.toFixed(0)}`);
 
     if (hero.hp <= 0) loseBattle();
 }
 
 function updateBattleBars() {
-    $('hero-battle-hp').textContent = hero.hp.toFixed(1);
+    $('hero-battle-hp').textContent = hero.hp.toFixed(0);
     $('hero-hp-bar').style.width = (hero.hp / hero.maxHp * 100) + '%';
-    $('boss-battle-hp').textContent = bossHp.toFixed(1);
+    $('boss-battle-hp').textContent = bossHp.toFixed(0);
     $('boss-hp-bar').style.width = (bossHp / bossMaxHp * 100) + '%';
 }
 
@@ -830,58 +857,49 @@ function showDamagePopup(text, crit) {
 }
 
 /* ============================================================
-   14. КОНЕЦ БОЯ
+   13. КОНЕЦ БОЯ
    ============================================================ */
 function winBattle() {
     battleActive = false;
     stopAuto();
     const boss = currentBoss;
     const mult = boss.dailyMultiplier || 1;
-    const xp = boss.reward.xp * mult;
-    const silver = boss.reward.silver * mult;
-    const gold = boss.reward.gold * mult;
+    
+    addBattleLog(`<span class="win">ПОБЕДА!</span>`);
 
-    addBattleLog(`<span class="win">ПОБЕДА! ${boss.name} повержен.</span>`);
-
-    if (!towerMode && boss.id && !boss.id.startsWith('tower') && boss.id !== 'daily-dragon') {
+    if (!towerMode && boss.id && !boss.id.startsWith('tower') && boss.id !== 'daily') {
         if (!defeatedBosses.includes(boss.id)) defeatedBosses.push(boss.id);
     }
-    hero.silver += silver;
-    hero.gold += gold;
-    // Ключи с шансом
+    hero.silver += boss.reward.silver * mult;
+    hero.gold += boss.reward.gold * mult;
     if (Math.random() < 0.4) hero.keys++;
-    gainXP(xp);
+    gainXP(boss.reward.xp * mult);
 
-    if (boss.id === 'daily-dragon') hero.dailyClaimedDate = todayStr();
+    if (boss.id === 'daily') hero.dailyClaimedDate = todayStr();
+    if (towerMode) { hero.towerFloor++; if (hero.towerFloor > hero.towerRecord) hero.towerRecord = hero.towerFloor; }
 
-    if (towerMode) {
-        hero.towerFloor++;
-        if (hero.towerFloor > hero.towerRecord) hero.towerRecord = hero.towerFloor;
-    }
-
-    showResult(true, { xp, silver, gold, keys: Math.random() < 0.4 ? 1 : 0 });
+    showResult(true, { xp: boss.reward.xp * mult, silver: boss.reward.silver * mult, gold: boss.reward.gold * mult });
     updateStats();
 }
 
 function loseBattle() {
     battleActive = false;
     stopAuto();
-    addBattleLog('<span class="lose">ПОРАЖЕНИЕ. Герой пал.</span>');
+    addBattleLog('<span class="lose">ПОРАЖЕНИЕ.</span>');
     if (towerMode) hero.towerFloor = 1;
     showResult(false, {});
 }
 
 function showResult(win, rewards) {
-    $('result-title').textContent = win ? 'ПОБЕДА!' : 'ПОРАЖЕНИЕ';
+    $('result-title').textContent = win ? 'СЕКТОР ЗАЧИЩЕН' : 'СМЕРТЬ';
     $('result-title').style.color = win ? '#00ff88' : '#ff5c78';
     if (win) {
         $('result-body').innerHTML = `
             <p>+${rewards.xp} XP</p>
             <p>+${rewards.silver} серебра</p>
-            <p>+${rewards.gold} золота</p>
-            ${rewards.keys ? '<p>+1 ключ</p>' : ''}`;
+            <p>+${rewards.gold} золота</p>`;
     } else {
-        $('result-body').innerHTML = '<p>Попробуй прокачаться и вернуться.</p>';
+        $('result-body').innerHTML = '<p>Ты не смог выжить. Прокачайся и вернись.</p>';
     }
     const again = $('result-again');
     again.onclick = () => {
@@ -903,7 +921,7 @@ function fleeBattle() {
 }
 
 /* ============================================================
-   15. АВТОБОЙ / СКОРОСТЬ
+   14. АВТОБОЙ / СКОРОСТЬ
    ============================================================ */
 function toggleAuto() {
     autoBattle = !autoBattle;
@@ -922,13 +940,12 @@ function stopAuto() {
     $('auto-btn').textContent = 'АВТО: ВЫКЛ';
 }
 function cycleSpeed() {
-    battleSpeed = battleSpeed === 1 ? 2 : battleSpeed === 2 ? 3 : 1;
+    battleSpeed = battleSpeed === 1 ? 2 : battleSpeed === 3 ? 1 : 3;
     $('speed-btn').textContent = '×' + battleSpeed;
-    if (autoBattle) { stopAuto(); toggleAuto(); }
 }
 
 /* ============================================================
-   16. ОПЫТ / УРОВЕНЬ
+   15. ОПЫТ / СОХРАНЕНИЕ
    ============================================================ */
 function gainXP(amount) {
     hero.xp += amount;
@@ -942,57 +959,6 @@ function gainXP(amount) {
     }
 }
 
-/* ============================================================
-   17. ДОСТИЖЕНИЯ
-   ============================================================ */
-function checkAchievements() {
-    achievements.forEach(a => {
-        if (hero.achievements.includes(a.id)) return;
-        try {
-            if (a.check()) {
-                hero.achievements.push(a.id);
-                if (a.reward.silver) hero.silver += a.reward.silver;
-                if (a.reward.diamonds) hero.diamonds += a.reward.diamonds;
-                setTimeout(() => alert(`Достижение: ${a.name}!`), 100);
-            }
-        } catch (e) {}
-    });
-}
-
-function renderAchievements() {
-    const grid = $('ach-grid');
-    grid.innerHTML = '';
-    achievements.forEach(a => {
-        const unlocked = hero.achievements.includes(a.id);
-        const d = document.createElement('div');
-        d.className = 'ach-card' + (unlocked ? ' unlocked' : '');
-        d.innerHTML = `
-            <h3>${a.name}</h3>
-            <p>${a.desc}</p>
-            <p class="ach-reward">${a.reward.silver ? '+' + a.reward.silver + ' серебра' : ''}${a.reward.diamonds ? '+' + a.reward.diamonds + ' алмазов' : ''}</p>
-            <p>${unlocked ? 'ПОЛУЧЕНО' : 'НЕ ПОЛУЧЕНО'}</p>`;
-        grid.appendChild(d);
-    });
-}
-
-/* ============================================================
-   18. ЕЖЕДНЕВНЫЕ / ОФФЛАЙН
-   ============================================================ */
-function checkDailyAndOffline() {
-    const now = Date.now();
-    const diffHours = (now - hero.lastPlayed) / 3600000;
-    if (diffHours > 1) {
-        const offlineSilver = Math.floor(diffHours * 50);
-        hero.silver += offlineSilver;
-        setTimeout(() => alert(`Пока тебя не было (${diffHours.toFixed(1)} ч), ты заработал ${offlineSilver} серебра.`), 300);
-    }
-    hero.lastPlayed = now;
-    dailyBoss = { id: 'daily-dragon' };
-}
-
-/* ============================================================
-   19. СОХРАНЕНИЕ
-   ============================================================ */
 function saveGame() {
     hero.version = SAVE_VERSION;
     localStorage.setItem('hero', JSON.stringify(hero));
@@ -1002,56 +968,38 @@ function saveGame() {
 function loadGame() {
     const saved = localStorage.getItem('hero');
     if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            Object.assign(hero, parsed);
-        } catch (e) {}
+        try { Object.assign(hero, JSON.parse(saved)); } catch (e) {}
     }
     if (!Array.isArray(hero.inventory)) hero.inventory = [];
     if (!Array.isArray(hero.equipment)) hero.equipment = [];
     if (!Array.isArray(hero.skills)) hero.skills = [];
     if (!Array.isArray(hero.achievements)) hero.achievements = [];
     if (!hero.consumables) hero.consumables = { potion: 3 };
-    if (!hero.pet) hero.pet = null;
-    if (hero.equipment.length && !hero.equipment[0].startsWith('item-')) {
-        hero.equipment = []; hero.inventory = [];
-    }
+
     const sb = localStorage.getItem('defeatedBosses');
     if (sb) { try { defeatedBosses = JSON.parse(sb) || []; } catch (e) { defeatedBosses = []; } }
-    // Стартовый капитал для нового игрока
-    if (!saved) {
-        hero.silver = 500;
-        hero.gold = 100;
-        hero.pet = 'cat';
-    }
+    
+    if (!saved) { hero.silver = 500; hero.gold = 100; }
 }
 
-function exportSave() {
-    $('save-text').value = localStorage.getItem('hero') || '';
-}
-
+function exportSave() { $('save-text').value = localStorage.getItem('hero') || ''; }
 function importSave() {
     try {
-        const data = $('save-text').value;
-        localStorage.setItem('hero', data);
+        localStorage.setItem('hero', $('save-text').value);
         location.reload();
     } catch (e) { alert('Ошибка импорта'); }
 }
 
 /* ============================================================
-   20. DEBUG
+   16. DEBUG / INIT
    ============================================================ */
 function dbgAddMoney() { hero.silver += 10000; updateStats(); }
 function dbgAddLevels() { for (let i = 0; i < 5; i++) gainXP(hero.xpToNext); updateStats(); }
 function dbgWinBoss() { if (currentBoss) { bossHp = 0; winBattle(); } }
 function dbgReset() { localStorage.clear(); location.reload(); }
 
-/* ============================================================
-   21. INIT
-   ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
     loadGame();
-    checkDailyAndOffline();
     updateStats();
     renderBosses();
     renderShop();
